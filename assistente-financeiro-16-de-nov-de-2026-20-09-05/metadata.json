@@ -1,0 +1,6 @@
+{
+  "name": "FinançaExec — Controle Financeiro Pessoal",
+  "description": "Aplicativo web autônomo de controle financeiro pessoal em HTML único com Tailwind CSS, Chart.js, metas financeiras e persistência em localStorage.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

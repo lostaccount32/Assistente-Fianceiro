@@ -1,0 +1,2944 @@
+<!doctype html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinançaExec — Controle Financeiro Pessoal</title>
+  <meta name="description" content="Aplicativo web autônomo de controle financeiro pessoal em HTML único com Tailwind CSS, Chart.js, metas financeiras e persistência em localStorage." />
+  <meta property="og:title" content="FinançaExec — Controle Financeiro Pessoal" />
+  <meta property="og:description" content="Aplicativo web autônomo de controle financeiro pessoal em HTML único com Tailwind CSS, Chart.js, metas financeiras e persistência em localStorage." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            canvas: '#090D16',
+            surface: '#131B2E',
+            elevated: '#182238',
+            hairline: '#1E293B',
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    body {
+      background-color: #090D16;
+      color: #F8FAFC;
+      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator,
+    input[type="month"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.8);
+      cursor: pointer;
+    }
+    .nav-transition {
+      transition: background-color 150ms cubic-bezier(0.16, 1, 0.3, 1), color 150ms cubic-bezier(0.16, 1, 0.3, 1), border-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-panel {
+      transition: opacity 180ms cubic-bezier(0.16, 1, 0.3, 1), transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+      }
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090D16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E293B;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="bg-canvas text-slate-100 min-h-screen flex flex-col lg:flex-row">
+
+  <!-- Barra Lateral Desktop + Navegação Mobile Compacta -->
+  <aside class="w-full lg:w-[248px] lg:min-h-screen bg-surface border-b lg:border-b-0 lg:border-r border-hairline shrink-0 flex flex-col justify-between sticky top-0 lg:static z-30">
+    <div>
+      <div class="px-5 py-4 lg:py-5 border-b border-hairline flex items-center justify-between gap-4">
+        <a href="#overview" onclick="setActiveView('overview'); return false;" class="text-lg font-bold tracking-tight text-slate-50 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded">
+          FinançaExec
+        </a>
+        <button type="button" onclick="openTransactionModal()" class="lg:hidden px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
+          + Transação
+        </button>
+      </div>
+
+      <nav aria-label="Navegação principal" class="px-3 py-2 lg:py-4 flex lg:flex-col gap-1 overflow-x-auto">
+        <button type="button" data-nav="overview" onclick="setActiveView('overview')" class="nav-btn nav-transition flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap shrink-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+          </svg>
+          <span>Visão Geral</span>
+        </button>
+
+        <button type="button" data-nav="transactions" onclick="setActiveView('transactions')" class="nav-btn nav-transition flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap shrink-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h10" />
+          </svg>
+          <span>Transações</span>
+        </button>
+
+        <button type="button" data-nav="goals" onclick="setActiveView('goals')" class="nav-btn nav-transition flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap shrink-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m0-18l4 4m-4-4L8 7m-4 9a8 8 0 0016 0" />
+          </svg>
+          <span>Metas Financeiras</span>
+        </button>
+
+        <button type="button" data-nav="categories" onclick="setActiveView('categories')" class="nav-btn nav-transition flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap shrink-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h10v10H7zM3 3h4v4H3zM17 17h4v4h-4z" />
+          </svg>
+          <span>Categorias</span>
+        </button>
+
+        <button type="button" data-nav="assistant" onclick="setActiveView('assistant')" class="nav-btn nav-transition flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap shrink-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5m-9 6l2.6-3H18a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v14z" />
+          </svg>
+          <span>Assistente IA</span>
+        </button>
+      </nav>
+    </div>
+
+    <div class="hidden lg:block p-4 border-t border-hairline space-y-2">
+      <div class="text-xs text-slate-400">
+        Armazenamento local ativo
+      </div>
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button type="button" onclick="openImportModal()" class="px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-canvas border border-hairline hover:border-slate-700 rounded-md whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+          Importar CSV
+        </button>
+        <button type="button" onclick="exportCSV()" class="px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-canvas border border-hairline hover:border-slate-700 rounded-md whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+          Exportar CSV
+        </button>
+      </div>
+      <button type="button" onclick="promptResetAll()" class="w-full px-2.5 py-1.5 text-xs font-medium text-rose-400 hover:text-rose-300 bg-canvas border border-hairline hover:border-rose-900/60 rounded-md whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500">
+        Zerar dados
+      </button>
+    </div>
+  </aside>
+
+  <!-- Área Principal -->
+  <div class="flex-1 flex flex-col min-w-0">
+
+    <!-- Top Bar Executivo (3 zonas enxutas) -->
+    <header class="hidden lg:flex items-center justify-between gap-8 px-8 py-4 border-b border-hairline bg-canvas">
+      <div class="flex items-center gap-2 text-sm text-slate-400 min-w-0">
+        <span>Controle Pessoal</span>
+        <span aria-hidden="true">/</span>
+        <h1 id="header-view-title" class="font-semibold text-slate-100 truncate">Visão Geral</h1>
+      </div>
+
+      <div class="flex items-center gap-3 shrink-0">
+        <button type="button" onclick="openTransactionModal()" class="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
+          + Nova Transação
+        </button>
+      </div>
+    </header>
+
+    <!-- Conteúdo Dinâmico -->
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1440px] w-full mx-auto space-y-6">
+
+      <!-- Barra de Filtros Globais (Visível em Visão Geral e Transações) -->
+      <section id="global-filter-bar" aria-label="Filtros de período e categoria" class="bg-surface border border-hairline rounded-xl p-4">
+        <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+          <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Período de análise">
+            <button type="button" data-period="current_month" onclick="setPeriodPreset('current_month')" class="period-btn px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+              Mês atual
+            </button>
+            <button type="button" data-period="last_30_days" onclick="setPeriodPreset('last_30_days')" class="period-btn px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+              Últimos 30 dias
+            </button>
+            <button type="button" data-period="specific_month" onclick="setPeriodPreset('specific_month')" class="period-btn px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+              Mês específico
+            </button>
+            <button type="button" data-period="date_range" onclick="setPeriodPreset('date_range')" class="period-btn px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+              Intervalo
+            </button>
+            <button type="button" data-period="all" onclick="setPeriodPreset('all')" class="period-btn px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+              Todo o período
+            </button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Seletor de Mês Específico -->
+            <div id="filter-specific-month-wrap" class="hidden items-center gap-2">
+              <label for="filter-month-input" class="text-xs text-slate-400 whitespace-nowrap">Mês:</label>
+              <input id="filter-month-input" type="month" onchange="onFilterChange()" class="bg-canvas border border-hairline text-slate-100 text-xs font-mono rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-500" />
+            </div>
+
+            <!-- Seletor de Intervalo -->
+            <div id="filter-date-range-wrap" class="hidden items-center gap-2">
+              <input id="filter-start-date" type="date" aria-label="Data inicial" onchange="onFilterChange()" class="bg-canvas border border-hairline text-slate-100 text-xs font-mono rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-500" />
+              <span class="text-xs text-slate-500">até</span>
+              <input id="filter-end-date" type="date" aria-label="Data final" onchange="onFilterChange()" class="bg-canvas border border-hairline text-slate-100 text-xs font-mono rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-500" />
+            </div>
+
+            <!-- Filtro de Categoria -->
+            <div class="flex items-center gap-2">
+              <label for="filter-category-select" class="text-xs text-slate-400 whitespace-nowrap">Categoria:</label>
+              <select id="filter-category-select" onchange="onFilterChange()" class="bg-canvas border border-hairline text-slate-100 text-xs rounded-lg px-3 py-1.5 min-w-[150px] focus:outline-none focus:border-emerald-500">
+                <option value="all">Todas as categorias</option>
+              </select>
+            </div>
+
+            <!-- Filtro de Tipo -->
+            <div class="flex items-center gap-2">
+              <label for="filter-type-select" class="text-xs text-slate-400 whitespace-nowrap">Tipo:</label>
+              <select id="filter-type-select" onchange="onFilterChange()" class="bg-canvas border border-hairline text-slate-100 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-emerald-500">
+                <option value="all">Todos</option>
+                <option value="income">Receitas</option>
+                <option value="expense">Despesas</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 1: VISÃO GERAL -->
+      <div id="view-overview" class="space-y-6">
+        <!-- Cards de Resumo Financeiro (KPIs) -->
+        <section aria-label="Resumo financeiro" class="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
+          <article class="bg-surface border border-hairline rounded-xl p-5 flex flex-col justify-between gap-3">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-medium text-slate-400">Saldo Total</span>
+              <span id="kpi-balance-status" class="text-xs font-medium text-slate-400">Acumulado geral</span>
+            </div>
+            <div id="kpi-balance-value" class="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-slate-50 tracking-tight">
+              R$ 0,00
+            </div>
+            <div id="kpi-balance-meta" class="text-xs text-slate-400">
+              0 lançamentos registrados
+            </div>
+          </article>
+
+          <article class="bg-surface border border-hairline rounded-xl p-5 flex flex-col justify-between gap-3">
+            <div class="flex items-center justify-between gap-2">
+              <span id="kpi-income-title" class="text-xs font-medium text-slate-400">Receitas do Mês</span>
+              <span class="text-xs font-medium text-emerald-400">Entradas</span>
+            </div>
+            <div id="kpi-income-value" class="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-emerald-400 tracking-tight">
+              R$ 0,00
+            </div>
+            <div id="kpi-income-meta" class="text-xs text-slate-400">
+              Nenhuma receita no período
+            </div>
+          </article>
+
+          <article class="bg-surface border border-hairline rounded-xl p-5 flex flex-col justify-between gap-3">
+            <div class="flex items-center justify-between gap-2">
+              <span id="kpi-expense-title" class="text-xs font-medium text-slate-400">Despesas do Mês</span>
+              <span class="text-xs font-medium text-rose-400">Saídas</span>
+            </div>
+            <div id="kpi-expense-value" class="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-rose-400 tracking-tight">
+              R$ 0,00
+            </div>
+            <div id="kpi-expense-meta" class="text-xs text-slate-400">
+              Nenhuma despesa no período
+            </div>
+          </article>
+        </section>
+
+        <!-- Seção de Gráficos -->
+        <section aria-label="Gráficos financeiros" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          <!-- Gráfico de Rosca: Despesas por Categoria -->
+          <div class="lg:col-span-5 bg-surface border border-hairline rounded-xl p-5 flex flex-col">
+            <div class="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h2 class="text-base font-semibold text-slate-100">Despesas por Categoria</h2>
+                <p id="donut-subtitle" class="text-xs text-slate-400 mt-0.5">Distribuição no período selecionado</p>
+              </div>
+              <span id="donut-total-label" class="text-xs font-mono tabular-nums text-slate-300 whitespace-nowrap">R$ 0,00</span>
+            </div>
+
+            <div id="donut-chart-wrap" class="hidden flex-1 flex flex-col justify-between gap-4">
+              <div class="relative h-[220px] w-full flex items-center justify-center">
+                <canvas id="chart-expenses-donut"></canvas>
+              </div>
+              <div id="donut-legend-list" class="divide-y divide-hairline max-h-[160px] overflow-y-auto pr-1"></div>
+            </div>
+
+            <div id="donut-empty-state" class="flex-1 flex flex-col items-center justify-center text-center py-10 px-4">
+              <svg class="w-10 h-10 text-slate-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+              </svg>
+              <p class="text-sm font-medium text-slate-200">Sem despesas no período</p>
+              <p class="text-xs text-slate-400 mt-1 max-w-xs">Registre sua primeira despesa para visualizar a divisão percentual por categoria.</p>
+              <button type="button" onclick="openTransactionModal('expense')" class="mt-4 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors whitespace-nowrap">
+                Registrar despesa
+              </button>
+            </div>
+          </div>
+
+          <!-- Gráfico de Barras: Comparativo Receitas vs. Despesas -->
+          <div class="lg:col-span-7 bg-surface border border-hairline rounded-xl p-5 flex flex-col">
+            <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+              <div>
+                <h2 class="text-base font-semibold text-slate-100">Receitas vs. Despesas</h2>
+                <p id="bar-subtitle" class="text-xs text-slate-400 mt-0.5">Comparativo dos últimos 6 meses</p>
+              </div>
+              <div class="flex items-center gap-4 text-xs text-slate-300">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" aria-hidden="true"></span>
+                  <span>Receitas</span>
+                </span>
+                <span class="flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block" aria-hidden="true"></span>
+                  <span>Despesas</span>
+                </span>
+              </div>
+            </div>
+
+            <div id="bar-chart-wrap" class="hidden flex-1 min-h-[260px] relative">
+              <canvas id="chart-income-expense-bar"></canvas>
+            </div>
+
+            <div id="bar-empty-state" class="flex-1 flex flex-col items-center justify-center text-center py-10 px-4">
+              <svg class="w-10 h-10 text-slate-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M9 17V9m4 8V5m4 12v-4" />
+              </svg>
+              <p class="text-sm font-medium text-slate-200">Nenhum dado comparativo ainda</p>
+              <p class="text-xs text-slate-400 mt-1 max-w-sm">Adicione receitas e despesas para acompanhar a evolução mensal do seu fluxo financeiro.</p>
+              <button type="button" onclick="openTransactionModal('income')" class="mt-4 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors whitespace-nowrap">
+                Registrar receita
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Resumo de Metas + Transações Recentes na Visão Geral -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <!-- Resumo das Metas Financeiras -->
+          <div class="lg:col-span-5 bg-surface border border-hairline rounded-xl p-5 space-y-4">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <h2 class="text-base font-semibold text-slate-100">Metas Financeiras</h2>
+                <p class="text-xs text-slate-400 mt-0.5">Tetos mensais e economia global</p>
+              </div>
+              <button type="button" onclick="setActiveView('goals')" class="text-xs font-medium text-emerald-400 hover:text-emerald-300 whitespace-nowrap transition-colors">
+                Gerenciar metas
+              </button>
+            </div>
+
+            <div id="overview-goals-list" class="space-y-4"></div>
+          </div>
+
+          <!-- Transações Recentes / Filtradas -->
+          <div class="lg:col-span-7 bg-surface border border-hairline rounded-xl p-5 space-y-4">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <h2 class="text-base font-semibold text-slate-100">Lançamentos do Período</h2>
+                <p id="overview-tx-subtitle" class="text-xs text-slate-400 mt-0.5">Exibindo os registros mais recentes</p>
+              </div>
+              <button type="button" onclick="setActiveView('transactions')" class="text-xs font-medium text-emerald-400 hover:text-emerald-300 whitespace-nowrap transition-colors">
+                Ver todos
+              </button>
+            </div>
+
+            <div id="overview-transactions-container"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- VIEW 2: TRANSAÇÕES -->
+      <div id="view-transactions" class="hidden space-y-6">
+        <section class="bg-surface border border-hairline rounded-xl p-5 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold text-slate-100">Histórico de Transações</h2>
+              <p id="tx-count-subtitle" class="text-xs text-slate-400 mt-0.5">0 lançamentos no filtro atual</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="relative">
+                <input id="filter-search-input" type="search" oninput="onFilterChange()" placeholder="Buscar descrição..." aria-label="Buscar transação por descrição" class="bg-canvas border border-hairline text-slate-100 placeholder-slate-500 text-xs rounded-lg pl-3 pr-3 py-2 w-full sm:w-56 focus:outline-none focus:border-emerald-500" />
+              </div>
+              <button type="button" onclick="openImportModal()" class="px-3.5 py-2 text-xs font-medium text-slate-200 hover:text-white bg-canvas border border-hairline hover:border-slate-600 rounded-lg whitespace-nowrap shrink-0 transition-colors">
+                Importar CSV
+              </button>
+              <button type="button" onclick="openTransactionModal()" class="px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg whitespace-nowrap shrink-0 transition-colors">
+                + Nova Transação
+              </button>
+            </div>
+          </div>
+
+          <div id="full-transactions-container"></div>
+        </section>
+      </div>
+
+      <!-- VIEW 3: METAS FINANCEIRAS -->
+      <div id="view-goals" class="hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <!-- Formulário de Nova Meta -->
+          <section class="lg:col-span-5 xl:col-span-4 min-w-0 bg-surface border border-hairline rounded-xl p-5 space-y-4">
+            <div class="min-w-0">
+              <h2 class="text-base font-semibold text-slate-100">Nova Meta Financeira</h2>
+              <p class="text-xs text-slate-400 mt-0.5">Defina um teto por categoria ou objetivo de economia</p>
+            </div>
+
+            <form id="goal-form" onsubmit="handleGoalSubmit(event)" class="space-y-4 min-w-0" novalidate>
+              <div class="min-w-0">
+                <span class="block text-xs font-medium text-slate-300 mb-1.5">Tipo de meta</span>
+                <div class="flex flex-wrap gap-1.5 p-1 bg-canvas border border-hairline rounded-lg">
+                  <button type="button" id="goal-kind-cap-btn" onclick="setGoalFormKind('category_cap')" class="flex-1 min-w-[130px] text-center py-2 px-2.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap">
+                    Teto por Categoria
+                  </button>
+                  <button type="button" id="goal-kind-savings-btn" onclick="setGoalFormKind('global_savings')" class="flex-1 min-w-[130px] text-center py-2 px-2.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap">
+                    Economia Global
+                  </button>
+                </div>
+              </div>
+
+              <div id="goal-category-field" class="min-w-0">
+                <label for="goal-category-select" class="block text-xs font-medium text-slate-300 mb-1.5">Categoria de despesa</label>
+                <select id="goal-category-select" class="w-full min-w-0 bg-canvas border border-hairline text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500"></select>
+              </div>
+
+              <div id="goal-title-field" class="hidden min-w-0">
+                <label for="goal-title-input" class="block text-xs font-medium text-slate-300 mb-1.5">Nome da meta de economia</label>
+                <input id="goal-title-input" type="text" maxlength="60" placeholder="Ex.: Reserva de emergência" class="w-full min-w-0 bg-canvas border border-hairline text-slate-100 placeholder-slate-500 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500" />
+              </div>
+
+              <div class="min-w-0">
+                <label id="goal-amount-label" for="goal-amount-input" class="block text-xs font-medium text-slate-300 mb-1.5">Limite mensal (R$)</label>
+                <input id="goal-amount-input" type="number" step="0.01" min="0.01" placeholder="0,00" class="w-full min-w-0 bg-canvas border border-hairline text-slate-100 placeholder-slate-500 text-sm font-mono tabular-nums rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500" />
+              </div>
+
+              <div id="goal-savings-mode-field" class="hidden space-y-2 min-w-0">
+                <label for="goal-manual-saved-input" class="block text-xs font-medium text-slate-300">Valor já reservado (opcional, R$)</label>
+                <input id="goal-manual-saved-input" type="number" step="0.01" min="0" placeholder="Deixe vazio para usar o Saldo Total" class="w-full min-w-0 bg-canvas border border-hairline text-slate-100 placeholder-slate-500 text-sm font-mono tabular-nums rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500" />
+                <p class="text-[11px] text-slate-400">Se deixado em branco, a meta acompanha automaticamente o seu Saldo Total.</p>
+              </div>
+
+              <p id="goal-form-error" class="hidden text-xs text-rose-400" role="alert"></p>
+
+              <button type="submit" class="w-full py-2.5 px-4 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
+                Salvar Meta
+              </button>
+            </form>
+          </section>
+
+          <!-- Lista Completa de Metas -->
+          <section class="lg:col-span-7 xl:col-span-8 min-w-0 bg-surface border border-hairline rounded-xl p-5 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <div class="min-w-0">
+                <h2 class="text-base font-semibold text-slate-100">Acompanhamento de Metas e Orçamentos</h2>
+                <p id="goals-ref-subtitle" class="text-xs text-slate-400 mt-0.5">Progresso calculado em tempo real</p>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <label for="goals-month-ref" class="text-xs text-slate-400 whitespace-nowrap">Mês dos tetos:</label>
+                <input id="goals-month-ref" type="month" onchange="renderGoalsView()" class="bg-canvas border border-hairline text-slate-100 text-xs font-mono rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-500" />
+              </div>
+            </div>
+
+            <div id="full-goals-list" class="space-y-4"></div>
+          </section>
+        </div>
+      </div>
+
+      <!-- VIEW 4: CATEGORIAS E DADOS -->
+      <div id="view-categories" class="hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <!-- Criar Categoria Personalizada -->
+          <section class="lg:col-span-4 bg-surface border border-hairline rounded-xl p-5 space-y-4">
+            <div>
+              <h2 class="text-base font-semibold text-slate-100">Nova Categoria</h2>
+              <p class="text-xs text-slate-400 mt-0.5">Personalize suas categorias de receita e despesa</p>
+            </div>
+
+            <form id="category-form" onsubmit="handleCategorySubmit(event)" class="space-y-4" novalidate>
+              <div>
+                <label for="cat-name-input" class="block text-xs font-medium text-slate-300 mb-1.5">Nome da categoria</label>
+                <input id="cat-name-input" type="text" maxlength="32" placeholder="Ex.: Investimentos, Pets, Viagens" class="w-full bg-canvas border border-hairline text-slate-100 placeholder-slate-500 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500" />
+              </div>
+
+              <div>
+                <label for="cat-type-select" class="block text-xs font-medium text-slate-300 mb-1.5">Aplicável a</label>
+                <select id="cat-type-select" class="w-full bg-canvas border border-hairline text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                  <option value="expense">Despesas</option>
+                  <option value="income">Receitas</option>
+                  <option value="both">Receitas e Despesas</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="cat-color-input" class="block text-xs font-medium text-slate-300 mb-1.5">Cor no gráfico</label>
+                <div class="flex items-center gap-3">
+                  <input id="cat-color-input" type="color" value="#38BDF8" class="h-9 w-14 bg-canvas border border-hairline rounded-lg cursor-pointer p-0.5" />
+                  <span class="text-xs text-slate-400">Utilizada nos gráficos de distribuição</span>
+                </div>
+              </div>
+
+              <p id="cat-form-error" class="hidden text-xs text-rose-400" role="alert"></p>
+
+              <button type="submit" class="w-full py-2.5 px-4 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors">
+                Adicionar Categoria
+              </button>
+            </form>
+
+            <div class="pt-4 border-t border-hairline space-y-2 lg:hidden">
+              <div class="text-xs font-medium text-slate-300">Backup e Manutenção</div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="openImportModal()" class="flex-1 min-w-[110px] px-3 py-2 text-xs font-medium text-slate-200 bg-canvas border border-hairline rounded-lg whitespace-nowrap">
+                  Importar CSV
+                </button>
+                <button type="button" onclick="exportCSV()" class="flex-1 min-w-[110px] px-3 py-2 text-xs font-medium text-slate-200 bg-canvas border border-hairline rounded-lg whitespace-nowrap">
+                  Exportar CSV
+                </button>
+                <button type="button" onclick="promptResetAll()" class="w-full px-3 py-2 text-xs font-medium text-rose-400 bg-canvas border border-hairline rounded-lg whitespace-nowrap">
+                  Zerar Dados
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Lista de Categorias -->
+          <section class="lg:col-span-8 bg-surface border border-hairline rounded-xl p-5 space-y-4">
+            <div>
+              <h2 class="text-base font-semibold text-slate-100">Categorias Cadastradas</h2>
+              <p class="text-xs text-slate-400 mt-0.5">Categorias personalizadas podem ser removidas quando não estiverem em uso</p>
+            </div>
+            <div id="categories-list" class="divide-y divide-hairline"></div>
+          </section>
+        </div>
+      </div>
+
+      <!-- VIEW 5: ASSISTENTE IA -->
+      <div id="view-assistant" class="hidden">
+        <section class="bg-surface border border-hairline rounded-xl flex flex-col overflow-hidden" style="height: calc(100vh - 230px); min-height: 520px;">
+          <div class="px-5 py-4 border-b border-hairline flex flex-wrap items-center justify-between gap-3">
+            <div class="min-w-0">
+              <h2 class="text-base font-semibold text-slate-100">Assistente Financeiro</h2>
+              <p id="chat-status" class="text-xs text-slate-400 mt-0.5">Pergunte sobre seus gastos, metas e saldo</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <button type="button" onclick="clearChat()" class="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-canvas border border-hairline hover:border-slate-600 rounded-lg whitespace-nowrap transition-colors">
+                Nova conversa
+              </button>
+              <button type="button" onclick="toggleChatSettings()" class="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-canvas border border-hairline hover:border-slate-600 rounded-lg whitespace-nowrap transition-colors">
+                Configurar
+              </button>
+            </div>
+          </div>
+
+          <!-- Configurações do chat -->
+          <div id="chat-settings-panel" class="hidden px-5 py-4 border-b border-hairline bg-canvas/40 space-y-3">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label for="chat-provider-select" class="block text-xs font-medium text-slate-300 mb-1.5">Conexão</label>
+                <select id="chat-provider-select" onchange="onChatProviderChange()" class="w-full bg-canvas border border-hairline text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                  <option value="gemini">Gemini (chave de API)</option>
+                  <option value="proxy">Meu servidor (recomendado em produção)</option>
+                </select>
+              </div>
+
+              <div id="chat-gemini-fields" class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label for="chat-apikey-input" class="block text-xs font-medium text-slate-300 mb-1.5">Chave de API</label>
+                  <input id="chat-apikey-input" type="password" autocomplete="off" placeholder="Cole sua chave" class="w-full bg-canvas border border-hairline text-slate-100 placeholder-slate-500 text-sm font-mono rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500" />
+                </div>
+                <div>
+                  <label for="chat-model-input" class="block text-xs font-medium text-slate-300 mb-1.5">Modelo</label>
+                  <input id="chat-model-input" type="text" placeholder="gemini-2.5-flash" class="w-full bg-canvas border border-hairline text-slate-100 placeholder-slate-500 text-sm font-mono rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500" />
+                </div>
+              </div>
+
+              <div id="chat-proxy-fields" class="hidden md:col-span-2">
+                <label for="chat-proxy-input" class="block text-xs font-medium text-slate-300 mb-1.5">URL do endpoint</label>
+                <input id="chat-proxy-input" type="text" placeholder="/api/chat" class="w-full bg-canvas border border-hairline text-slate-100 placeholder-slate-500 text-sm font-mono rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500" />
+              </div>
+            </div>
+
+            <p class="text-[11px] text-slate-400">
+              A chave fica salva apenas neste navegador (localStorage). Em um app publicado, use "Meu servidor" para não expor a chave.
+              A cada pergunta, um resumo dos seus lançamentos recentes é enviado ao provedor de IA.
+            </p>
+
+            <div class="flex items-center justify-end">
+              <button type="button" onclick="saveChatSettingsFromForm()" class="px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors whitespace-nowrap">
+                Salvar configuração
+              </button>
+            </div>
+          </div>
+
+          <!-- Mensagens -->
+          <div id="chat-messages" class="flex-1 overflow-y-auto p-5 space-y-4" aria-live="polite"></div>
+
+          <!-- Entrada -->
+          <form id="chat-form" onsubmit="handleChatSubmit(event)" class="p-4 border-t border-hairline flex items-end gap-3">
+            <label for="chat-input" class="sr-only">Mensagem para o assistente</label>
+            <textarea id="chat-input" rows="1" maxlength="1000" placeholder="Ex.: Quanto gastei com alimentação este mês?" onkeydown="handleChatKeydown(event)" oninput="autoResizeChatInput(this)" class="flex-1 resize-none bg-canvas border border-hairline text-slate-100 placeholder-slate-500 text-sm rounded-lg px-3 py-2.5 max-h-[140px] focus:outline-none focus:border-emerald-500"></textarea>
+            <button type="button" id="chat-stop-btn" onclick="stopChat()" class="hidden px-4 py-2.5 text-sm font-medium text-slate-200 bg-canvas border border-hairline hover:border-slate-600 rounded-lg whitespace-nowrap transition-colors">
+              Parar
+            </button>
+            <button type="submit" id="chat-send-btn" class="px-4 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg whitespace-nowrap transition-colors">
+              Enviar
+            </button>
+          </form>
+        </section>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Modal: Nova Transação -->
+  <div id="transaction-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="tx-modal-title">
+    <div class="modal-panel w-full max-w-lg bg-surface border border-hairline rounded-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-hairline flex items-center justify-between">
+        <h2 id="tx-modal-title" class="text-base font-semibold text-slate-100">Nova Transação</h2>
+        <button type="button" onclick="closeTransactionModal()" aria-label="Fechar janela" class="text-slate-400 hover:text-slate-100 p-1 rounded-md transition-colors">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form id="tx-form" onsubmit="handleTransactionSubmit(event)" class="p-6 space-y-4" novalidate>
+        <div>
+          <span class="block text-xs font-medium text-slate-300 mb-1.5">Tipo de movimentação</span>
+          <div class="grid grid-cols-2 gap-1.5 p-1 bg-canvas border border-hairline rounded-lg">
+            <button type="button" id="tx-type-expense-btn" onclick="setTxFormType('expense')" class="py-2 px-3 text-xs font-semibold rounded-md transition-colors">
+              Despesa
+            </button>
+            <button type="button" id="tx-type-income-btn" onclick="setTxFormType('income')" class="py-2 px-3 text-xs font-semibold rounded-md transition-colors">
+              Receita
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="tx-amount-input" class="block text-xs font-medium text-slate-300 mb-1.5">Valor (R$)</label>
+            <input id="tx-amount-input" type="number" step="0.01" min="0.01" placeholder="0,00" required class="w-full bg-canvas border border-hairline text-slate-100 placeholder-slate-500 text-sm font-mono tabular-nums rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500" />
+          </div>
+
+          <div>
+            <label for="tx-date-input" class="block text-xs font-medium text-slate-300 mb-1.5">Data</label>
+            <input id="tx-date-input" type="date" required class="w-full bg-canvas border border-hairline text-slate-100 text-sm font-mono rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500" />
+          </div>
+        </div>
+
+        <div>
+          <label for="tx-desc-input" class="block text-xs font-medium text-slate-300 mb-1.5">Descrição</label>
+          <input id="tx-desc-input" type="text" maxlength="80" placeholder="Ex.: Supermercado, Salário mensal, Aluguel..." required class="w-full bg-canvas border border-hairline text-slate-100 placeholder-slate-500 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500" />
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label for="tx-category-select" class="text-xs font-medium text-slate-300">Categoria</label>
+            <button type="button" onclick="toggleQuickCategory()" id="quick-cat-toggle-btn" class="text-xs font-medium text-emerald-400 hover:text-emerald-300">
+              + Nova categoria personalizada
+            </button>
+          </div>
+
+          <select id="tx-category-select" class="w-full bg-canvas border border-hairline text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500"></select>
+
+          <div id="quick-cat-box" class="hidden mt-2.5 p-3 bg-canvas border border-hairline rounded-lg space-y-2.5">
+            <div class="flex items-center gap-2">
+              <input id="quick-cat-name" type="text" maxlength="32" placeholder="Nome da nova categoria" class="flex-1 bg-surface border border-hairline text-slate-100 placeholder-slate-500 text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:border-emerald-500" />
+              <input id="quick-cat-color" type="color" value="#38BDF8" aria-label="Cor da nova categoria" class="h-8 w-10 bg-surface border border-hairline rounded-md cursor-pointer p-0.5" />
+              <button type="button" onclick="saveQuickCategory()" class="px-3 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg whitespace-nowrap">
+                Criar
+              </button>
+            </div>
+            <p id="quick-cat-error" class="hidden text-xs text-rose-400"></p>
+          </div>
+        </div>
+
+        <p id="tx-form-error" class="hidden text-xs text-rose-400" role="alert"></p>
+
+        <div class="pt-2 flex items-center justify-end gap-3 border-t border-hairline">
+          <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white bg-canvas border border-hairline rounded-lg transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors">
+            Salvar Transação
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Importar CSV -->
+  <div id="import-csv-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
+    <div class="modal-panel w-full max-w-lg bg-surface border border-hairline rounded-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-hairline flex items-center justify-between">
+        <h2 id="import-modal-title" class="text-base font-semibold text-slate-100">Importar Transações (CSV)</h2>
+        <button type="button" onclick="closeImportModal()" aria-label="Fechar janela" class="text-slate-400 hover:text-slate-100 p-1 rounded-md transition-colors">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div class="space-y-1.5">
+          <p class="text-xs text-slate-300">
+            Selecione um arquivo <span class="font-mono text-slate-100">.csv</span> com as colunas:
+          </p>
+          <p class="text-xs font-mono text-slate-400 bg-canvas border border-hairline rounded-lg px-3 py-2 overflow-x-auto whitespace-nowrap">
+            Data, Descrição, Categoria, Tipo, Valor
+          </p>
+          <p class="text-[11px] text-slate-400">
+            Aceita separador vírgula ou ponto e vírgula, datas AAAA-MM-DD ou DD/MM/AAAA e cria automaticamente categorias novas.
+          </p>
+        </div>
+
+        <div>
+          <label for="import-csv-file" class="block text-xs font-medium text-slate-300 mb-1.5">Arquivo CSV</label>
+          <input id="import-csv-file" type="file" accept=".csv,text/csv" onchange="handleCSVFileSelect(event)" class="block w-full text-xs text-slate-300 bg-canvas border border-hairline rounded-lg cursor-pointer file:mr-3 file:py-2 file:px-3 file:border-0 file:text-xs file:font-semibold file:bg-elevated file:text-slate-100 hover:file:bg-slate-700" />
+        </div>
+
+        <div>
+          <span class="block text-xs font-medium text-slate-300 mb-1.5">Modo de importação</span>
+          <div class="flex flex-wrap gap-1.5 p-1 bg-canvas border border-hairline rounded-lg">
+            <button type="button" id="import-mode-append-btn" onclick="setImportMode('append')" class="flex-1 min-w-[140px] py-1.5 px-2.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap">
+              Adicionar às atuais
+            </button>
+            <button type="button" id="import-mode-replace-btn" onclick="setImportMode('replace')" class="flex-1 min-w-[140px] py-1.5 px-2.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap">
+              Substituir existentes
+            </button>
+          </div>
+        </div>
+
+        <div id="import-preview-box" class="hidden p-3.5 bg-canvas border border-hairline rounded-lg space-y-1.5 text-xs">
+          <div id="import-preview-summary" class="font-medium text-slate-100"></div>
+          <div id="import-preview-details" class="text-slate-400"></div>
+        </div>
+
+        <p id="import-csv-error" class="hidden text-xs text-rose-400" role="alert"></p>
+
+        <div class="pt-2 flex items-center justify-end gap-3 border-t border-hairline">
+          <button type="button" onclick="closeImportModal()" class="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white bg-canvas border border-hairline rounded-lg transition-colors">
+            Cancelar
+          </button>
+          <button type="button" id="import-confirm-btn" onclick="confirmCSVImport()" disabled class="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-colors">
+            Confirmar Importação
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirmação de Limpeza Total -->
+  <div id="reset-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="reset-modal-title">
+    <div class="w-full max-w-md bg-surface border border-hairline rounded-xl p-6 space-y-4">
+      <h2 id="reset-modal-title" class="text-base font-semibold text-slate-100">Zerar todos os dados locais?</h2>
+      <p class="text-sm text-slate-400">
+        Esta ação apagará todas as transações, metas financeiras e categorias personalizadas armazenadas neste navegador.
+      </p>
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button type="button" onclick="closeResetModal()" class="px-4 py-2 text-sm font-medium text-slate-300 bg-canvas border border-hairline rounded-lg hover:text-white transition-colors">
+          Cancelar
+        </button>
+        <button type="button" onclick="confirmResetAll()" class="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded-lg transition-colors">
+          Confirmar e Zerar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Discreto -->
+  <div id="toast" class="hidden fixed bottom-5 right-5 z-50 px-4 py-2.5 bg-elevated border border-hairline rounded-lg text-xs font-medium text-slate-100 shadow-lg" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      const STORAGE_KEYS = {
+        transactions: 'financaexec_v1_transactions',
+        categories: 'financaexec_v1_categories',
+        goals: 'financaexec_v1_goals',
+      };
+
+      const DEFAULT_CATEGORIES = [
+        { id: 'cat_moradia', name: 'Moradia', type: 'expense', color: '#38BDF8', isCustom: false },
+        { id: 'cat_alimentacao', name: 'Alimentação', type: 'expense', color: '#F59E0B', isCustom: false },
+        { id: 'cat_transporte', name: 'Transporte', type: 'expense', color: '#A78BFA', isCustom: false },
+        { id: 'cat_saude', name: 'Saúde', type: 'expense', color: '#FB7185', isCustom: false },
+        { id: 'cat_lazer', name: 'Lazer', type: 'expense', color: '#F472B6', isCustom: false },
+        { id: 'cat_educacao', name: 'Educação', type: 'expense', color: '#60A5FA', isCustom: false },
+        { id: 'cat_assinaturas', name: 'Assinaturas', type: 'expense', color: '#2DD4BF', isCustom: false },
+        { id: 'cat_outros_desp', name: 'Outras Despesas', type: 'expense', color: '#94A3B8', isCustom: false },
+        { id: 'cat_salario', name: 'Salário', type: 'income', color: '#10B981', isCustom: false },
+        { id: 'cat_freelance', name: 'Freelance', type: 'income', color: '#34D399', isCustom: false },
+        { id: 'cat_investimentos', name: 'Investimentos', type: 'income', color: '#22D3EE', isCustom: false },
+        { id: 'cat_outros_rec', name: 'Outras Receitas', type: 'income', color: '#6EE7B7', isCustom: false },
+      ];
+
+      const brlFormatter = new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      });
+
+      const monthNamesShort = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+      function getTodayISO() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+
+      function getCurrentMonthISO() {
+        return getTodayISO().slice(0, 7);
+      }
+
+      function formatCurrency(val) {
+        return brlFormatter.format(Number(val) || 0);
+      }
+
+      function formatDateBR(isoDate) {
+        if (!isoDate || !isoDate.includes('-')) return isoDate || '';
+        const [y, m, d] = isoDate.split('-');
+        return `${d}/${m}/${y}`;
+      }
+
+      function formatMonthLabel(ym) {
+        if (!ym || !ym.includes('-')) return ym;
+        const [y, m] = ym.split('-');
+        const idx = parseInt(m, 10) - 1;
+        return `${monthNamesShort[idx] || m}/${y}`;
+      }
+
+      function generateId(prefix) {
+        return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function loadJSON(key, fallback) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) return fallback;
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : fallback;
+        } catch (err) {
+          return fallback;
+        }
+      }
+
+      function saveJSON(key, value) {
+        try {
+          localStorage.setItem(key, JSON.stringify(value));
+        } catch (err) {
+          showToast('Não foi possível salvar no armazenamento local.');
+        }
+      }
+
+      const state = {
+        activeView: 'overview',
+        transactions: loadJSON(STORAGE_KEYS.transactions, []),
+        categories: (() => {
+          const stored = loadJSON(STORAGE_KEYS.categories, null);
+          if (stored && stored.length > 0) return stored;
+          saveJSON(STORAGE_KEYS.categories, DEFAULT_CATEGORIES);
+          return [...DEFAULT_CATEGORIES];
+        })(),
+        goals: loadJSON(STORAGE_KEYS.goals, []),
+        filters: {
+          periodPreset: 'current_month',
+          month: getCurrentMonthISO(),
+          startDate: getTodayISO().slice(0, 8) + '01',
+          endDate: getTodayISO(),
+          categoryId: 'all',
+          type: 'all',
+          search: '',
+        },
+        txFormType: 'expense',
+        goalFormKind: 'category_cap',
+        pendingDeleteTxId: null,
+        pendingDeleteGoalId: null,
+        charts: {
+          donut: null,
+          bar: null,
+        },
+      };
+
+      let toastTimer = null;
+      function showToast(message) {
+        const el = document.getElementById('toast');
+        el.textContent = message;
+        el.classList.remove('hidden');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          el.classList.add('hidden');
+        }, 2800);
+      }
+
+      function getCategoryById(id) {
+        return state.categories.find((c) => c.id === id) || {
+          id: 'unknown',
+          name: 'Sem categoria',
+          type: 'both',
+          color: '#64748B',
+          isCustom: false,
+        };
+      }
+
+      function getFilteredTransactions(includeSearch = true) {
+        const { periodPreset, month, startDate, endDate, categoryId, type, search } = state.filters;
+        const currentMonth = getCurrentMonthISO();
+        const today = new Date();
+        const thirtyDaysAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29);
+        const thirtyIso = `${thirtyDaysAgo.getFullYear()}-${String(thirtyDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(thirtyDaysAgo.getDate()).padStart(2, '0')}`;
+
+        return state.transactions
+          .filter((tx) => {
+            if (periodPreset === 'current_month') {
+              if (!tx.date.startsWith(currentMonth)) return false;
+            } else if (periodPreset === 'specific_month') {
+              if (month && !tx.date.startsWith(month)) return false;
+            } else if (periodPreset === 'last_30_days') {
+              if (tx.date < thirtyIso || tx.date > getTodayISO()) return false;
+            } else if (periodPreset === 'date_range') {
+              if (startDate && tx.date < startDate) return false;
+              if (endDate && tx.date > endDate) return false;
+            }
+
+            if (categoryId !== 'all' && tx.categoryId !== categoryId) return false;
+            if (type !== 'all' && tx.type !== type) return false;
+
+            if (includeSearch && search.trim()) {
+              const q = search.trim().toLowerCase();
+              const catName = getCategoryById(tx.categoryId).name.toLowerCase();
+              if (!tx.description.toLowerCase().includes(q) && !catName.includes(q)) return false;
+            }
+            return true;
+          })
+          .sort((a, b) => (a.date === b.date ? b.createdAt - a.createdAt : b.date.localeCompare(a.date)));
+      }
+
+      function getGlobalTotals() {
+        let totalIncome = 0;
+        let totalExpense = 0;
+        for (const tx of state.transactions) {
+          if (tx.type === 'income') totalIncome += tx.amount;
+          else totalExpense += tx.amount;
+        }
+        return {
+          totalIncome,
+          totalExpense,
+          balance: totalIncome - totalExpense,
+        };
+      }
+
+      function getActivePeriodLabel() {
+        const { periodPreset, month, startDate, endDate } = state.filters;
+        if (periodPreset === 'current_month') return `Mês atual (${formatMonthLabel(getCurrentMonthISO())})`;
+        if (periodPreset === 'specific_month') return `Mês (${formatMonthLabel(month)})`;
+        if (periodPreset === 'last_30_days') return 'Últimos 30 dias';
+        if (periodPreset === 'date_range') return `${formatDateBR(startDate)} – ${formatDateBR(endDate)}`;
+        return 'Todo o período';
+      }
+
+      window.setActiveView = function (view) {
+        state.activeView = view;
+        const views = ['overview', 'transactions', 'goals', 'categories', 'assistant'];
+        const titles = {
+          overview: 'Visão Geral',
+          transactions: 'Transações',
+          goals: 'Metas Financeiras',
+          categories: 'Categorias',
+          assistant: 'Assistente IA',
+        };
+        views.forEach((v) => {
+          document.getElementById(`view-${v}`).classList.toggle('hidden', v !== view);
+        });
+        document.getElementById('header-view-title').textContent = titles[view] || 'Visão Geral';
+        document.getElementById('global-filter-bar').classList.toggle('hidden', view === 'goals' || view === 'categories' || view === 'assistant');
+
+        document.querySelectorAll('.nav-btn').forEach((btn) => {
+          const isActive = btn.dataset.nav === view;
+          btn.className = `nav-btn nav-transition flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap shrink-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+            isActive
+              ? 'bg-elevated text-slate-50 border border-hairline'
+              : 'text-slate-400 hover:text-slate-100 hover:bg-canvas/50 border border-transparent'
+          }`;
+        });
+
+        renderAll();
+      };
+
+      window.setPeriodPreset = function (preset) {
+        state.filters.periodPreset = preset;
+        document.getElementById('filter-specific-month-wrap').classList.toggle('hidden', preset !== 'specific_month');
+        document.getElementById('filter-specific-month-wrap').classList.toggle('flex', preset === 'specific_month');
+        document.getElementById('filter-date-range-wrap').classList.toggle('hidden', preset !== 'date_range');
+        document.getElementById('filter-date-range-wrap').classList.toggle('flex', preset === 'date_range');
+
+        document.querySelectorAll('.period-btn').forEach((btn) => {
+          const active = btn.dataset.period === preset;
+          btn.className = `period-btn px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+            active
+              ? 'bg-emerald-600 text-white'
+              : 'bg-canvas text-slate-300 hover:text-white border border-hairline'
+          }`;
+        });
+
+        renderAll();
+      };
+
+      window.onFilterChange = function () {
+        state.filters.month = document.getElementById('filter-month-input').value || getCurrentMonthISO();
+        state.filters.startDate = document.getElementById('filter-start-date').value;
+        state.filters.endDate = document.getElementById('filter-end-date').value;
+        state.filters.categoryId = document.getElementById('filter-category-select').value;
+        state.filters.type = document.getElementById('filter-type-select').value;
+        const searchInput = document.getElementById('filter-search-input');
+        state.filters.search = searchInput ? searchInput.value : '';
+        renderAll();
+      };
+
+      function populateCategoryDropdowns() {
+        const filterSelect = document.getElementById('filter-category-select');
+        const currentFilterVal = filterSelect.value || 'all';
+        filterSelect.innerHTML = '<option value="all">Todas as categorias</option>';
+        state.categories.forEach((cat) => {
+          const opt = document.createElement('option');
+          opt.value = cat.id;
+          opt.textContent = cat.name;
+          filterSelect.appendChild(opt);
+        });
+        if (Array.from(filterSelect.options).some((o) => o.value === currentFilterVal)) {
+          filterSelect.value = currentFilterVal;
+        } else {
+          filterSelect.value = 'all';
+          state.filters.categoryId = 'all';
+        }
+
+        const txSelect = document.getElementById('tx-category-select');
+        const prevTxCat = txSelect.value;
+        txSelect.innerHTML = '';
+        const eligibleTxCats = state.categories.filter((c) => c.type === state.txFormType || c.type === 'both');
+        eligibleTxCats.forEach((cat) => {
+          const opt = document.createElement('option');
+          opt.value = cat.id;
+          opt.textContent = cat.name;
+          txSelect.appendChild(opt);
+        });
+        if (eligibleTxCats.some((c) => c.id === prevTxCat)) {
+          txSelect.value = prevTxCat;
+        }
+
+        const goalCatSelect = document.getElementById('goal-category-select');
+        const prevGoalCat = goalCatSelect.value;
+        goalCatSelect.innerHTML = '';
+        const expenseCats = state.categories.filter((c) => c.type === 'expense' || c.type === 'both');
+        expenseCats.forEach((cat) => {
+          const opt = document.createElement('option');
+          opt.value = cat.id;
+          opt.textContent = cat.name;
+          goalCatSelect.appendChild(opt);
+        });
+        if (expenseCats.some((c) => c.id === prevGoalCat)) {
+          goalCatSelect.value = prevGoalCat;
+        }
+      }
+
+      function renderKPIs(filtered) {
+        const global = getGlobalTotals();
+        const balanceEl = document.getElementById('kpi-balance-value');
+        balanceEl.textContent = formatCurrency(global.balance);
+        balanceEl.className = `text-2xl sm:text-3xl font-bold font-mono tabular-nums tracking-tight ${
+          global.balance < 0 ? 'text-rose-400' : 'text-slate-50'
+        }`;
+
+        const totalCount = state.transactions.length;
+        document.getElementById('kpi-balance-meta').textContent =
+          totalCount === 1 ? '1 lançamento registrado' : `${totalCount} lançamentos registrados`;
+
+        let periodIncome = 0;
+        let periodIncomeCount = 0;
+        let periodExpense = 0;
+        let periodExpenseCount = 0;
+
+        for (const tx of filtered) {
+          if (tx.type === 'income') {
+            periodIncome += tx.amount;
+            periodIncomeCount++;
+          } else {
+            periodExpense += tx.amount;
+            periodExpenseCount++;
+          }
+        }
+
+        const isMonthlyMode = state.filters.periodPreset === 'current_month' || state.filters.periodPreset === 'specific_month';
+        document.getElementById('kpi-income-title').textContent = isMonthlyMode ? 'Receitas do Mês' : 'Receitas no Período';
+        document.getElementById('kpi-expense-title').textContent = isMonthlyMode ? 'Despesas do Mês' : 'Despesas no Período';
+
+        document.getElementById('kpi-income-value').textContent = formatCurrency(periodIncome);
+        document.getElementById('kpi-income-meta').textContent =
+          periodIncomeCount > 0
+            ? `${periodIncomeCount} ${periodIncomeCount === 1 ? 'entrada' : 'entradas'} · ${getActivePeriodLabel()}`
+            : `Nenhuma receita · ${getActivePeriodLabel()}`;
+
+        document.getElementById('kpi-expense-value').textContent = formatCurrency(periodExpense);
+        document.getElementById('kpi-expense-meta').textContent =
+          periodExpenseCount > 0
+            ? `${periodExpenseCount} ${periodExpenseCount === 1 ? 'saída' : 'saídas'} · ${getActivePeriodLabel()}`
+            : `Nenhuma despesa · ${getActivePeriodLabel()}`;
+      }
+
+      function renderDonutChart(filtered) {
+        const expenses = filtered.filter((tx) => tx.type === 'expense');
+        const totalExpense = expenses.reduce((sum, tx) => sum + tx.amount, 0);
+        document.getElementById('donut-total-label').textContent = formatCurrency(totalExpense);
+        document.getElementById('donut-subtitle').textContent = getActivePeriodLabel();
+
+        const wrap = document.getElementById('donut-chart-wrap');
+        const empty = document.getElementById('donut-empty-state');
+
+        if (expenses.length === 0 || totalExpense <= 0) {
+          wrap.classList.add('hidden');
+          empty.classList.remove('hidden');
+          return;
+        }
+
+        wrap.classList.remove('hidden');
+        empty.classList.add('hidden');
+
+        const grouped = new Map();
+        for (const tx of expenses) {
+          grouped.set(tx.categoryId, (grouped.get(tx.categoryId) || 0) + tx.amount);
+        }
+
+        const items = Array.from(grouped.entries())
+          .map(([catId, amount]) => {
+            const cat = getCategoryById(catId);
+            return {
+              id: catId,
+              name: cat.name,
+              color: cat.color,
+              amount,
+              pct: (amount / totalExpense) * 100,
+            };
+          })
+          .sort((a, b) => b.amount - a.amount);
+
+        const labels = items.map((i) => i.name);
+        const data = items.map((i) => i.amount);
+        const colors = items.map((i) => i.color);
+
+        const ctx = document.getElementById('chart-expenses-donut').getContext('2d');
+        if (state.charts.donut) {
+          state.charts.donut.data.labels = labels;
+          state.charts.donut.data.datasets[0].data = data;
+          state.charts.donut.data.datasets[0].backgroundColor = colors;
+          state.charts.donut.update();
+        } else {
+          state.charts.donut = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels,
+              datasets: [{
+                data,
+                backgroundColor: colors,
+                borderColor: '#131B2E',
+                borderWidth: 2,
+                hoverOffset: 4,
+              }],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              cutout: '68%',
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  backgroundColor: '#090D16',
+                  titleColor: '#F8FAFC',
+                  bodyColor: '#CBD5E1',
+                  borderColor: '#1E293B',
+                  borderWidth: 1,
+                  padding: 10,
+                  callbacks: {
+                    label: (context) => {
+                      const val = context.parsed || 0;
+                      const pct = totalExpense > 0 ? ((val / totalExpense) * 100).toFixed(1) : '0.0';
+                      return ` ${formatCurrency(val)} (${pct}%)`;
+                    },
+                  },
+                },
+              },
+            },
+          });
+        }
+
+        const legendEl = document.getElementById('donut-legend-list');
+        legendEl.innerHTML = items
+          .map(
+            (item) => `
+          <div class="py-2 flex items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-2.5 h-2.5 rounded-sm shrink-0" style="background-color: ${escapeHtml(item.color)}"></span>
+              <span class="text-slate-200 truncate">${escapeHtml(item.name)}</span>
+            </div>
+            <div class="flex items-center gap-3 shrink-0 font-mono tabular-nums">
+              <span class="text-slate-400">${item.pct.toFixed(1)}%</span>
+              <span class="text-slate-100 font-medium">${formatCurrency(item.amount)}</span>
+            </div>
+          </div>`
+          )
+          .join('');
+      }
+
+      function renderBarChart() {
+        const wrap = document.getElementById('bar-chart-wrap');
+        const empty = document.getElementById('bar-empty-state');
+
+        const relevantTx = state.transactions.filter((tx) => {
+          if (state.filters.categoryId !== 'all' && tx.categoryId !== state.filters.categoryId) return false;
+          if (state.filters.type !== 'all' && tx.type !== state.filters.type) return false;
+          return true;
+        });
+
+        if (relevantTx.length === 0) {
+          wrap.classList.add('hidden');
+          empty.classList.remove('hidden');
+          return;
+        }
+
+        wrap.classList.remove('hidden');
+        empty.classList.add('hidden');
+
+        const refMonth = state.filters.periodPreset === 'specific_month' ? state.filters.month : getCurrentMonthISO();
+        const [refYear, refMon] = refMonth.split('-').map(Number);
+
+        const months = [];
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(refYear, refMon - 1 - i, 1);
+          const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          months.push(ym);
+        }
+
+        const incomeSeries = months.map((ym) =>
+          relevantTx
+            .filter((tx) => tx.type === 'income' && tx.date.startsWith(ym))
+            .reduce((s, tx) => s + tx.amount, 0)
+        );
+        const expenseSeries = months.map((ym) =>
+          relevantTx
+            .filter((tx) => tx.type === 'expense' && tx.date.startsWith(ym))
+            .reduce((s, tx) => s + tx.amount, 0)
+        );
+        const labels = months.map(formatMonthLabel);
+
+        const ctx = document.getElementById('chart-income-expense-bar').getContext('2d');
+        if (state.charts.bar) {
+          state.charts.bar.data.labels = labels;
+          state.charts.bar.data.datasets[0].data = incomeSeries;
+          state.charts.bar.data.datasets[1].data = expenseSeries;
+          state.charts.bar.update();
+        } else {
+          state.charts.bar = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: 'Receitas',
+                  data: incomeSeries,
+                  backgroundColor: '#10B981',
+                  borderRadius: 4,
+                  maxBarThickness: 28,
+                },
+                {
+                  label: 'Despesas',
+                  data: expenseSeries,
+                  backgroundColor: '#F43F5E',
+                  borderRadius: 4,
+                  maxBarThickness: 28,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: { mode: 'index', intersect: false },
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  backgroundColor: '#090D16',
+                  titleColor: '#F8FAFC',
+                  bodyColor: '#CBD5E1',
+                  borderColor: '#1E293B',
+                  borderWidth: 1,
+                  padding: 10,
+                  callbacks: {
+                    label: (context) => ` ${context.dataset.label}: ${formatCurrency(context.parsed.y)}`,
+                  },
+                },
+              },
+              scales: {
+                x: {
+                  grid: { display: false },
+                  ticks: {
+                    color: '#94A3B8',
+                    font: { family: '"JetBrains Mono", monospace', size: 11 },
+                  },
+                },
+                y: {
+                  beginAtZero: true,
+                  grid: { color: '#1E293B' },
+                  border: { display: false },
+                  ticks: {
+                    color: '#94A3B8',
+                    font: { family: '"JetBrains Mono", monospace', size: 11 },
+                    callback: (value) => formatCurrency(value),
+                  },
+                },
+              },
+            },
+          });
+        }
+      }
+
+      function renderTransactionsTable(containerId, items, limit) {
+        const container = document.getElementById(containerId);
+        const list = typeof limit === 'number' ? items.slice(0, limit) : items;
+
+        if (list.length === 0) {
+          const hasAny = state.transactions.length > 0;
+          container.innerHTML = `
+            <div class="text-center py-10 px-4 border border-dashed border-hairline rounded-lg">
+              <p class="text-sm font-medium text-slate-200">${
+                hasAny ? 'Nenhuma transação encontrada para este filtro' : 'Nenhuma transação cadastrada'
+              }</p>
+              <p class="text-xs text-slate-400 mt-1">${
+                hasAny
+                  ? 'Ajuste o período, categoria ou termo de busca para visualizar outros lançamentos.'
+                  : 'Comece registrando sua primeira receita ou despesa.'
+              }</p>
+              ${
+                hasAny
+                  ? `<button type="button" onclick="resetFilters()" class="mt-4 px-3.5 py-2 text-xs font-medium text-slate-200 bg-canvas border border-hairline hover:border-slate-600 rounded-lg transition-colors">Limpar filtros</button>`
+                  : `<button type="button" onclick="openTransactionModal()" class="mt-4 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors">Registrar primeira transação</button>`
+              }
+            </div>`;
+          return;
+        }
+
+        const rows = list
+          .map((tx) => {
+            const cat = getCategoryById(tx.categoryId);
+            const isIncome = tx.type === 'income';
+            const isPendingDelete = state.pendingDeleteTxId === tx.id;
+            return `
+            <tr class="hover:bg-canvas/50 transition-colors">
+              <td class="py-3 pr-3 text-xs font-mono tabular-nums text-slate-400 whitespace-nowrap">${formatDateBR(tx.date)}</td>
+              <td class="py-3 pr-3 text-sm text-slate-100 font-medium max-w-[220px] truncate">${escapeHtml(tx.description)}</td>
+              <td class="py-3 pr-3 text-xs text-slate-300 whitespace-nowrap">${escapeHtml(cat.name)}</td>
+              <td class="py-3 pr-3 text-xs font-medium whitespace-nowrap ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">
+                ${isIncome ? 'Receita' : 'Despesa'}
+              </td>
+              <td class="py-3 pr-3 text-sm font-mono tabular-nums text-right whitespace-nowrap font-semibold ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">
+                ${isIncome ? '+' : '-'} ${formatCurrency(tx.amount)}
+              </td>
+              <td class="py-3 text-right whitespace-nowrap">
+                ${
+                  isPendingDelete
+                    ? `<div class="inline-flex items-center gap-1.5">
+                        <button type="button" onclick="confirmDeleteTransaction('${tx.id}')" class="px-2 py-1 text-[11px] font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded transition-colors">Confirmar</button>
+                        <button type="button" onclick="cancelDeleteTransaction()" class="px-2 py-1 text-[11px] font-medium text-slate-300 bg-canvas border border-hairline rounded hover:text-white transition-colors">Cancelar</button>
+                      </div>`
+                    : `<button type="button" onclick="requestDeleteTransaction('${tx.id}')" aria-label="Excluir ${escapeHtml(tx.description)}" class="text-xs font-medium text-slate-400 hover:text-rose-400 transition-colors px-2 py-1 rounded">
+                        Excluir
+                      </button>`
+                }
+              </td>
+            </tr>`;
+          })
+          .join('');
+
+        container.innerHTML = `
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-hairline text-[11px] font-medium text-slate-400">
+                  <th class="pb-2.5 pr-3 font-medium">Data</th>
+                  <th class="pb-2.5 pr-3 font-medium">Descrição</th>
+                  <th class="pb-2.5 pr-3 font-medium">Categoria</th>
+                  <th class="pb-2.5 pr-3 font-medium">Tipo</th>
+                  <th class="pb-2.5 pr-3 font-medium text-right">Valor</th>
+                  <th class="pb-2.5 font-medium text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-hairline">
+                ${rows}
+              </tbody>
+            </table>
+          </div>`;
+      }
+
+      function computeGoalStatus(goal, refMonth) {
+        if (goal.kind === 'category_cap') {
+          const cat = getCategoryById(goal.categoryId);
+          const spent = state.transactions
+            .filter((tx) => tx.type === 'expense' && tx.categoryId === goal.categoryId && tx.date.startsWith(refMonth))
+            .reduce((sum, tx) => sum + tx.amount, 0);
+          const pctRaw = goal.targetAmount > 0 ? (spent / goal.targetAmount) * 100 : 0;
+          const pctBar = Math.min(pctRaw, 100);
+          const remaining = goal.targetAmount - spent;
+
+          let barColor = 'bg-emerald-500';
+          let statusLabel = 'Dentro do orçamento';
+          let statusTextClass = 'text-emerald-400';
+
+          if (pctRaw > 100) {
+            barColor = 'bg-rose-500';
+            statusLabel = 'Limite excedido';
+            statusTextClass = 'text-rose-400';
+          } else if (pctRaw >= 80) {
+            barColor = 'bg-amber-500';
+            statusLabel = 'Atenção: próximo do teto';
+            statusTextClass = 'text-amber-400';
+          }
+
+          return {
+            title: `Teto · ${cat.name}`,
+            subtitle: `Orçamento de ${formatMonthLabel(refMonth)}`,
+            currentAmount: spent,
+            targetAmount: goal.targetAmount,
+            pctRaw,
+            pctBar,
+            barColor,
+            statusLabel,
+            statusTextClass,
+            footerLeft: `Consumido: ${formatCurrency(spent)} de ${formatCurrency(goal.targetAmount)}`,
+            footerRight:
+              remaining >= 0
+                ? `Disponível: ${formatCurrency(remaining)}`
+                : `Excedente: ${formatCurrency(Math.abs(remaining))}`,
+          };
+        }
+
+        const globalTotals = getGlobalTotals();
+        const usesManual = typeof goal.manualSaved === 'number' && !Number.isNaN(goal.manualSaved);
+        const currentSaved = usesManual ? goal.manualSaved : Math.max(0, globalTotals.balance);
+        const pctRaw = goal.targetAmount > 0 ? (currentSaved / goal.targetAmount) * 100 : 0;
+        const pctBar = Math.min(pctRaw, 100);
+        const missing = Math.max(0, goal.targetAmount - currentSaved);
+        const reached = currentSaved >= goal.targetAmount;
+
+        return {
+          title: goal.title || 'Meta de Economia Global',
+          subtitle: usesManual ? 'Valor reservado manual' : 'Baseado no Saldo Total',
+          currentAmount: currentSaved,
+          targetAmount: goal.targetAmount,
+          pctRaw,
+          pctBar,
+          barColor: reached ? 'bg-emerald-500' : 'bg-sky-500',
+          statusLabel: reached ? 'Meta atingida' : 'Em andamento',
+          statusTextClass: reached ? 'text-emerald-400' : 'text-sky-400',
+          footerLeft: `Acumulado: ${formatCurrency(currentSaved)} de ${formatCurrency(goal.targetAmount)}`,
+          footerRight: reached ? 'Objetivo concluído' : `Faltam ${formatCurrency(missing)}`,
+        };
+      }
+
+      function renderGoalsList(containerId, compact) {
+        const container = document.getElementById(containerId);
+        const refMonthInput = document.getElementById('goals-month-ref');
+        const refMonth =
+          (refMonthInput && refMonthInput.value) ||
+          (state.filters.periodPreset === 'specific_month' ? state.filters.month : getCurrentMonthISO());
+
+        if (state.goals.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-8 px-4 border border-dashed border-hairline rounded-lg">
+              <p class="text-sm font-medium text-slate-200">Nenhuma meta definida</p>
+              <p class="text-xs text-slate-400 mt-1">Crie tetos de gastos por categoria ou metas de economia global para acompanhar seu progresso.</p>
+              ${
+                compact
+                  ? `<button type="button" onclick="setActiveView('goals')" class="mt-4 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors">Criar primeira meta</button>`
+                  : ''
+              }
+            </div>`;
+          return;
+        }
+
+        const list = compact ? state.goals.slice(0, 4) : state.goals;
+        container.innerHTML = list
+          .map((goal) => {
+            const info = computeGoalStatus(goal, refMonth);
+            const isPendingDelete = state.pendingDeleteGoalId === goal.id;
+            const usesManual = goal.kind === 'global_savings' && typeof goal.manualSaved === 'number';
+
+            return `
+            <div class="py-3 border-b border-hairline last:border-b-0 space-y-2.5 min-w-0">
+              <div class="flex flex-wrap items-start justify-between gap-2 min-w-0">
+                <div class="min-w-0 flex-1">
+                  <div class="text-sm font-semibold text-slate-100 truncate">${escapeHtml(info.title)}</div>
+                  <div class="text-xs text-slate-400 flex items-center gap-1.5 flex-wrap mt-0.5">
+                    <span>${escapeHtml(info.subtitle)}</span>
+                    <span aria-hidden="true">·</span>
+                    <span class="font-medium ${info.statusTextClass}">${escapeHtml(info.statusLabel)}</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="text-xs font-mono tabular-nums font-semibold text-slate-200">${info.pctRaw.toFixed(0)}%</span>
+                  ${
+                    !compact
+                      ? isPendingDelete
+                        ? `<button type="button" onclick="confirmDeleteGoal('${goal.id}')" class="px-2 py-1 text-[11px] font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded whitespace-nowrap">Confirmar</button>
+                           <button type="button" onclick="cancelDeleteGoal()" class="px-2 py-1 text-[11px] text-slate-300 bg-canvas border border-hairline rounded whitespace-nowrap">Cancelar</button>`
+                        : `<button type="button" onclick="requestDeleteGoal('${goal.id}')" class="text-xs text-slate-400 hover:text-rose-400 px-1.5 py-0.5 rounded transition-colors whitespace-nowrap">Excluir</button>`
+                      : ''
+                  }
+                </div>
+              </div>
+
+              <div class="w-full h-2 bg-canvas rounded-full overflow-hidden border border-hairline" role="progressbar" aria-valuenow="${Math.round(info.pctRaw)}" aria-valuemin="0" aria-valuemax="100" aria-label="${escapeHtml(info.title)}">
+                <div class="h-full ${info.barColor} transition-all duration-200" style="width: ${info.pctBar.toFixed(1)}%"></div>
+              </div>
+
+              <div class="flex flex-wrap items-center justify-between gap-2 text-xs font-mono tabular-nums min-w-0">
+                <span class="text-slate-300 break-words">${escapeHtml(info.footerLeft)}</span>
+                <span class="${info.statusTextClass} break-words">${escapeHtml(info.footerRight)}</span>
+              </div>
+
+              ${
+                !compact && usesManual
+                  ? `<div class="pt-1 flex flex-wrap items-center gap-2">
+                      <input id="aporte-input-${goal.id}" type="number" step="0.01" placeholder="Valor reservado (R$)" class="flex-1 min-w-[150px] max-w-[240px] bg-canvas border border-hairline text-slate-100 placeholder-slate-500 text-xs font-mono rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-500" />
+                      <button type="button" onclick="updateManualGoalValue('${goal.id}')" class="px-2.5 py-1.5 text-xs font-medium text-emerald-400 hover:text-emerald-300 bg-canvas border border-hairline rounded-lg transition-colors whitespace-nowrap shrink-0">Atualizar</button>
+                    </div>`
+                  : ''
+              }
+            </div>`;
+          })
+          .join('');
+      }
+
+      window.renderGoalsView = function () {
+        renderGoalsList('full-goals-list', false);
+      };
+
+      function renderCategoriesView() {
+        const container = document.getElementById('categories-list');
+        const typeLabelMap = {
+          expense: 'Despesa',
+          income: 'Receita',
+          both: 'Receita e Despesa',
+        };
+
+        container.innerHTML = state.categories
+          .map((cat) => {
+            const txCount = state.transactions.filter((tx) => tx.categoryId === cat.id).length;
+            const goalCount = state.goals.filter((g) => g.categoryId === cat.id).length;
+            const canDelete = cat.isCustom && txCount === 0 && goalCount === 0;
+
+            return `
+            <div class="py-3 flex items-center justify-between gap-4">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="w-3 h-3 rounded-sm shrink-0" style="background-color: ${escapeHtml(cat.color)}"></span>
+                <div class="min-w-0">
+                  <div class="text-sm font-medium text-slate-100 truncate">${escapeHtml(cat.name)}</div>
+                  <div class="text-xs text-slate-400 flex items-center gap-1.5">
+                    <span>${typeLabelMap[cat.type] || 'Geral'}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>${cat.isCustom ? 'Personalizada' : 'Padrão'}</span>
+                    <span aria-hidden="true">·</span>
+                    <span class="font-mono tabular-nums">${txCount} ${txCount === 1 ? 'lançamento' : 'lançamentos'}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="shrink-0">
+                ${
+                  canDelete
+                    ? `<button type="button" onclick="deleteCustomCategory('${cat.id}')" class="text-xs font-medium text-rose-400 hover:text-rose-300 px-2 py-1 rounded transition-colors">Remover</button>`
+                    : `<span class="text-xs text-slate-500">${cat.isCustom ? 'Em uso' : 'Sistema'}</span>`
+                }
+              </div>
+            </div>`;
+          })
+          .join('');
+      }
+
+      function renderAll() {
+        populateCategoryDropdowns();
+        const filtered = getFilteredTransactions(state.activeView === 'transactions');
+
+        if (state.activeView === 'overview') {
+          renderKPIs(filtered);
+          renderDonutChart(filtered);
+          renderBarChart();
+          renderGoalsList('overview-goals-list', true);
+          renderTransactionsTable('overview-transactions-container', filtered, 6);
+          document.getElementById('overview-tx-subtitle').textContent = `${filtered.length} ${
+            filtered.length === 1 ? 'lançamento' : 'lançamentos'
+          } · ${getActivePeriodLabel()}`;
+        } else if (state.activeView === 'transactions') {
+          document.getElementById('tx-count-subtitle').textContent = `${filtered.length} ${
+            filtered.length === 1 ? 'lançamento encontrado' : 'lançamentos encontrados'
+          } · ${getActivePeriodLabel()}`;
+          renderTransactionsTable('full-transactions-container', filtered);
+        } else if (state.activeView === 'goals') {
+          renderGoalsList('full-goals-list', false);
+        } else if (state.activeView === 'categories') {
+          renderCategoriesView();
+        } else if (state.activeView === 'assistant') {
+          renderAssistantView();
+        }
+      }
+
+      // Modal Transação
+      window.openTransactionModal = function (defaultType) {
+        const modal = document.getElementById('transaction-modal');
+        document.getElementById('tx-form').reset();
+        document.getElementById('tx-date-input').value = getTodayISO();
+        document.getElementById('tx-form-error').classList.add('hidden');
+        document.getElementById('quick-cat-box').classList.add('hidden');
+        document.getElementById('quick-cat-error').classList.add('hidden');
+
+        setTxFormType(defaultType === 'income' ? 'income' : 'expense');
+        modal.classList.remove('hidden');
+        setTimeout(() => document.getElementById('tx-amount-input').focus(), 40);
+      };
+
+      window.closeTransactionModal = function () {
+        document.getElementById('transaction-modal').classList.add('hidden');
+      };
+
+      window.setTxFormType = function (type) {
+        state.txFormType = type;
+        const expBtn = document.getElementById('tx-type-expense-btn');
+        const incBtn = document.getElementById('tx-type-income-btn');
+        expBtn.className = `py-2 px-3 text-xs font-semibold rounded-md transition-colors ${
+          type === 'expense' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-slate-100'
+        }`;
+        incBtn.className = `py-2 px-3 text-xs font-semibold rounded-md transition-colors ${
+          type === 'income' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-100'
+        }`;
+        populateCategoryDropdowns();
+      };
+
+      window.toggleQuickCategory = function () {
+        const box = document.getElementById('quick-cat-box');
+        box.classList.toggle('hidden');
+        if (!box.classList.contains('hidden')) {
+          document.getElementById('quick-cat-name').focus();
+        }
+      };
+
+      window.saveQuickCategory = function () {
+        const nameInput = document.getElementById('quick-cat-name');
+        const colorInput = document.getElementById('quick-cat-color');
+        const errEl = document.getElementById('quick-cat-error');
+        const name = nameInput.value.trim();
+
+        if (!name) {
+          errEl.textContent = 'Informe um nome para a nova categoria.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        if (state.categories.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+          errEl.textContent = 'Já existe uma categoria com este nome.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+
+        const newCat = {
+          id: generateId('cat'),
+          name,
+          type: state.txFormType,
+          color: colorInput.value || '#38BDF8',
+          isCustom: true,
+        };
+        state.categories.push(newCat);
+        saveJSON(STORAGE_KEYS.categories, state.categories);
+        populateCategoryDropdowns();
+        document.getElementById('tx-category-select').value = newCat.id;
+
+        nameInput.value = '';
+        errEl.classList.add('hidden');
+        document.getElementById('quick-cat-box').classList.add('hidden');
+        showToast(`Categoria "${name}" criada.`);
+      };
+
+      window.handleTransactionSubmit = function (e) {
+        e.preventDefault();
+        const amountRaw = parseFloat(document.getElementById('tx-amount-input').value);
+        const dateVal = document.getElementById('tx-date-input').value;
+        const descVal = document.getElementById('tx-desc-input').value.trim();
+        const catVal = document.getElementById('tx-category-select').value;
+        const errEl = document.getElementById('tx-form-error');
+
+        if (!Number.isFinite(amountRaw) || amountRaw <= 0) {
+          errEl.textContent = 'Informe um valor válido maior que zero.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        if (!dateVal) {
+          errEl.textContent = 'Selecione a data da transação.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        if (!descVal) {
+          errEl.textContent = 'Informe uma descrição para identificar o lançamento.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        if (!catVal) {
+          errEl.textContent = 'Selecione uma categoria válida.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+
+        const newTx = {
+          id: generateId('tx'),
+          type: state.txFormType,
+          amount: Math.round(amountRaw * 100) / 100,
+          description: descVal,
+          date: dateVal,
+          categoryId: catVal,
+          createdAt: Date.now(),
+        };
+
+        state.transactions.push(newTx);
+        saveJSON(STORAGE_KEYS.transactions, state.transactions);
+        closeTransactionModal();
+        renderAll();
+        showToast(newTx.type === 'income' ? 'Receita registrada com sucesso.' : 'Despesa registrada com sucesso.');
+      };
+
+      // Exclusão de transação com confirmação inline
+      window.requestDeleteTransaction = function (id) {
+        state.pendingDeleteTxId = id;
+        renderAll();
+      };
+      window.cancelDeleteTransaction = function () {
+        state.pendingDeleteTxId = null;
+        renderAll();
+      };
+      window.confirmDeleteTransaction = function (id) {
+        state.transactions = state.transactions.filter((tx) => tx.id !== id);
+        state.pendingDeleteTxId = null;
+        saveJSON(STORAGE_KEYS.transactions, state.transactions);
+        renderAll();
+        showToast('Transação excluída.');
+      };
+
+      // Metas Financeiras
+      window.setGoalFormKind = function (kind) {
+        state.goalFormKind = kind;
+        const capBtn = document.getElementById('goal-kind-cap-btn');
+        const savBtn = document.getElementById('goal-kind-savings-btn');
+
+        capBtn.className = `flex-1 min-w-[130px] text-center py-2 px-2.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+          kind === 'category_cap' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-100'
+        }`;
+        savBtn.className = `flex-1 min-w-[130px] text-center py-2 px-2.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+          kind === 'global_savings' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-100'
+        }`;
+
+        document.getElementById('goal-category-field').classList.toggle('hidden', kind !== 'category_cap');
+        document.getElementById('goal-title-field').classList.toggle('hidden', kind !== 'global_savings');
+        document.getElementById('goal-savings-mode-field').classList.toggle('hidden', kind !== 'global_savings');
+        document.getElementById('goal-amount-label').textContent =
+          kind === 'category_cap' ? 'Limite mensal (R$)' : 'Valor alvo da meta (R$)';
+        document.getElementById('goal-form-error').classList.add('hidden');
+      };
+
+      window.handleGoalSubmit = function (e) {
+        e.preventDefault();
+        const errEl = document.getElementById('goal-form-error');
+        const targetAmount = parseFloat(document.getElementById('goal-amount-input').value);
+
+        if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
+          errEl.textContent = 'Informe um valor alvo válido maior que zero.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+
+        if (state.goalFormKind === 'category_cap') {
+          const categoryId = document.getElementById('goal-category-select').value;
+          if (!categoryId) {
+            errEl.textContent = 'Selecione uma categoria de despesa.';
+            errEl.classList.remove('hidden');
+            return;
+          }
+          const existingIdx = state.goals.findIndex((g) => g.kind === 'category_cap' && g.categoryId === categoryId);
+          if (existingIdx >= 0) {
+            state.goals[existingIdx].targetAmount = Math.round(targetAmount * 100) / 100;
+            showToast('Teto da categoria atualizado.');
+          } else {
+            state.goals.push({
+              id: generateId('goal'),
+              kind: 'category_cap',
+              categoryId,
+              targetAmount: Math.round(targetAmount * 100) / 100,
+              createdAt: Date.now(),
+            });
+            showToast('Teto de gastos criado.');
+          }
+        } else {
+          const title = document.getElementById('goal-title-input').value.trim();
+          const manualRaw = document.getElementById('goal-manual-saved-input').value.trim();
+          if (!title) {
+            errEl.textContent = 'Informe um nome para a meta de economia.';
+            errEl.classList.remove('hidden');
+            return;
+          }
+          let manualSaved = null;
+          if (manualRaw !== '') {
+            const parsedManual = parseFloat(manualRaw);
+            if (!Number.isFinite(parsedManual) || parsedManual < 0) {
+              errEl.textContent = 'O valor já reservado deve ser zero ou positivo.';
+              errEl.classList.remove('hidden');
+              return;
+            }
+            manualSaved = Math.round(parsedManual * 100) / 100;
+          }
+          state.goals.push({
+            id: generateId('goal'),
+            kind: 'global_savings',
+            title,
+            targetAmount: Math.round(targetAmount * 100) / 100,
+            manualSaved,
+            createdAt: Date.now(),
+          });
+          showToast('Meta de economia criada.');
+        }
+
+        saveJSON(STORAGE_KEYS.goals, state.goals);
+        document.getElementById('goal-form').reset();
+        errEl.classList.add('hidden');
+        renderAll();
+      };
+
+      window.updateManualGoalValue = function (goalId) {
+        const input = document.getElementById(`aporte-input-${goalId}`);
+        const val = parseFloat(input.value);
+        if (!Number.isFinite(val) || val < 0) {
+          showToast('Informe um valor válido maior ou igual a zero.');
+          return;
+        }
+        const goal = state.goals.find((g) => g.id === goalId);
+        if (!goal) return;
+        goal.manualSaved = Math.round(val * 100) / 100;
+        saveJSON(STORAGE_KEYS.goals, state.goals);
+        renderAll();
+        showToast('Valor reservado atualizado.');
+      };
+
+      window.requestDeleteGoal = function (id) {
+        state.pendingDeleteGoalId = id;
+        renderGoalsView();
+      };
+      window.cancelDeleteGoal = function () {
+        state.pendingDeleteGoalId = null;
+        renderGoalsView();
+      };
+      window.confirmDeleteGoal = function (id) {
+        state.goals = state.goals.filter((g) => g.id !== id);
+        state.pendingDeleteGoalId = null;
+        saveJSON(STORAGE_KEYS.goals, state.goals);
+        renderAll();
+        showToast('Meta excluída.');
+      };
+
+      // Categorias
+      window.handleCategorySubmit = function (e) {
+        e.preventDefault();
+        const name = document.getElementById('cat-name-input').value.trim();
+        const type = document.getElementById('cat-type-select').value;
+        const color = document.getElementById('cat-color-input').value || '#38BDF8';
+        const errEl = document.getElementById('cat-form-error');
+
+        if (!name) {
+          errEl.textContent = 'Informe o nome da categoria.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        if (state.categories.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+          errEl.textContent = 'Já existe uma categoria com este nome.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+
+        state.categories.push({
+          id: generateId('cat'),
+          name,
+          type,
+          color,
+          isCustom: true,
+        });
+        saveJSON(STORAGE_KEYS.categories, state.categories);
+        document.getElementById('category-form').reset();
+        document.getElementById('cat-color-input').value = '#38BDF8';
+        errEl.classList.add('hidden');
+        renderAll();
+        showToast(`Categoria "${name}" adicionada.`);
+      };
+
+      window.deleteCustomCategory = function (id) {
+        state.categories = state.categories.filter((c) => c.id !== id);
+        saveJSON(STORAGE_KEYS.categories, state.categories);
+        renderAll();
+        showToast('Categoria removida.');
+      };
+
+      window.resetFilters = function () {
+        state.filters.categoryId = 'all';
+        state.filters.type = 'all';
+        state.filters.search = '';
+        document.getElementById('filter-category-select').value = 'all';
+        document.getElementById('filter-type-select').value = 'all';
+        const searchEl = document.getElementById('filter-search-input');
+        if (searchEl) searchEl.value = '';
+        setPeriodPreset('current_month');
+      };
+
+      // Exportação e Importação CSV
+      const IMPORT_PALETTE = ['#38BDF8', '#A78BFA', '#F472B6', '#FB923C', '#2DD4BF', '#FACC15', '#818CF8', '#4ADE80'];
+      let pendingImportState = {
+        mode: 'append',
+        rows: [],
+        ignoredCount: 0,
+        newCategories: [],
+      };
+
+      function parseCSVLine(line, delimiter) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (inQuotes) {
+            if (ch === '"' && line[i + 1] === '"') {
+              current += '"';
+              i++;
+            } else if (ch === '"') {
+              inQuotes = false;
+            } else {
+              current += ch;
+            }
+          } else if (ch === '"') {
+            inQuotes = true;
+          } else if (ch === delimiter) {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += ch;
+          }
+        }
+        result.push(current.trim());
+        return result;
+      }
+
+      function normalizeDateToISO(raw) {
+        const val = String(raw || '').trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+        const brMatch = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (brMatch) return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
+        return null;
+      }
+
+      function parseAmountValue(raw) {
+        let s = String(raw || '').trim().replace(/R\$/gi, '').replace(/\s+/g, '');
+        if (!s) return NaN;
+        if (s.includes(',') && s.includes('.')) {
+          if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
+            s = s.replace(/\./g, '').replace(',', '.');
+          } else {
+            s = s.replace(/,/g, '');
+          }
+        } else if (s.includes(',')) {
+          s = s.replace(',', '.');
+        }
+        return parseFloat(s);
+      }
+
+      window.setImportMode = function (mode) {
+        pendingImportState.mode = mode;
+        const appendBtn = document.getElementById('import-mode-append-btn');
+        const replaceBtn = document.getElementById('import-mode-replace-btn');
+        appendBtn.className = `flex-1 min-w-[140px] py-1.5 px-2.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+          mode === 'append' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-100'
+        }`;
+        replaceBtn.className = `flex-1 min-w-[140px] py-1.5 px-2.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+          mode === 'replace' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-slate-100'
+        }`;
+      };
+
+      window.openImportModal = function () {
+        pendingImportState = { mode: 'append', rows: [], ignoredCount: 0, newCategories: [] };
+        document.getElementById('import-csv-file').value = '';
+        document.getElementById('import-preview-box').classList.add('hidden');
+        document.getElementById('import-csv-error').classList.add('hidden');
+        document.getElementById('import-confirm-btn').disabled = true;
+        setImportMode('append');
+        document.getElementById('import-csv-modal').classList.remove('hidden');
+      };
+
+      window.closeImportModal = function () {
+        document.getElementById('import-csv-modal').classList.add('hidden');
+      };
+
+      window.handleCSVFileSelect = function (e) {
+        const file = e.target.files && e.target.files[0];
+        const errEl = document.getElementById('import-csv-error');
+        const previewBox = document.getElementById('import-preview-box');
+        const confirmBtn = document.getElementById('import-confirm-btn');
+
+        errEl.classList.add('hidden');
+        previewBox.classList.add('hidden');
+        confirmBtn.disabled = true;
+
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          const rawText = String(ev.target.result || '').replace(/^\uFEFF/, '');
+          const lines = rawText.split(/\r?\n/).filter((l) => l.trim().length > 0);
+
+          if (lines.length === 0) {
+            errEl.textContent = 'O arquivo CSV está vazio.';
+            errEl.classList.remove('hidden');
+            return;
+          }
+
+          const firstLine = lines[0];
+          const semicolonCount = (firstLine.match(/;/g) || []).length;
+          const commaCount = (firstLine.match(/,/g) || []).length;
+          const delimiter = semicolonCount > commaCount ? ';' : ',';
+
+          const firstCols = parseCSVLine(firstLine, delimiter).map((c) => c.toLowerCase());
+          const hasHeader =
+            firstCols.some((c) => c.includes('data') || c.includes('date')) &&
+            firstCols.some((c) => c.includes('valor') || c.includes('amount') || c.includes('descri'));
+
+          let colIdx = { date: 0, desc: 1, category: 2, type: 3, amount: 4 };
+          let startIdx = 0;
+
+          if (hasHeader) {
+            startIdx = 1;
+            const findCol = (keys, fallback) => {
+              const idx = firstCols.findIndex((c) => keys.some((k) => c.includes(k)));
+              return idx >= 0 ? idx : fallback;
+            };
+            colIdx = {
+              date: findCol(['data', 'date'], 0),
+              desc: findCol(['descri', 'desc', 'hist', 'title'], 1),
+              category: findCol(['categ'], 2),
+              type: findCol(['tipo', 'type'], 3),
+              amount: findCol(['valor', 'amount', 'quantia'], 4),
+            };
+          }
+
+          const parsedRows = [];
+          const newCatNames = new Set();
+          let ignoredCount = 0;
+
+          for (let i = startIdx; i < lines.length; i++) {
+            const cols = parseCSVLine(lines[i], delimiter);
+            const dateISO = normalizeDateToISO(cols[colIdx.date]);
+            const description = (cols[colIdx.desc] || '').trim();
+            const catNameRaw = (cols[colIdx.category] || '').trim() || 'Outras Despesas';
+            const typeRaw = (cols[colIdx.type] || '').trim().toLowerCase();
+            let amount = parseAmountValue(cols[colIdx.amount]);
+
+            if (!dateISO || !description || !Number.isFinite(amount) || amount === 0) {
+              ignoredCount++;
+              continue;
+            }
+
+            let type = 'expense';
+            if (typeRaw.includes('receita') || typeRaw.includes('entrada') || typeRaw.includes('income') || typeRaw.includes('cred')) {
+              type = 'income';
+            } else if (typeRaw.includes('despesa') || typeRaw.includes('saida') || typeRaw.includes('saída') || typeRaw.includes('expense') || typeRaw.includes('deb')) {
+              type = 'expense';
+            } else if (amount > 0 && !typeRaw) {
+              type = 'income';
+            }
+
+            if (amount < 0) {
+              type = 'expense';
+              amount = Math.abs(amount);
+            }
+
+            const existingCat = state.categories.find((c) => c.name.toLowerCase() === catNameRaw.toLowerCase());
+            if (!existingCat) {
+              newCatNames.add(`${catNameRaw}::${type}`);
+            }
+
+            parsedRows.push({
+              date: dateISO,
+              description: description.slice(0, 80),
+              categoryName: catNameRaw,
+              categoryId: existingCat ? existingCat.id : null,
+              type,
+              amount: Math.round(amount * 100) / 100,
+            });
+          }
+
+          if (parsedRows.length === 0) {
+            errEl.textContent = 'Nenhuma linha válida encontrada. Verifique as colunas (Data, Descrição, Categoria, Tipo, Valor).';
+            errEl.classList.remove('hidden');
+            return;
+          }
+
+          pendingImportState.rows = parsedRows;
+          pendingImportState.ignoredCount = ignoredCount;
+          pendingImportState.newCategories = Array.from(newCatNames);
+
+          document.getElementById('import-preview-summary').textContent = `${parsedRows.length} ${
+            parsedRows.length === 1 ? 'transação pronta para importar' : 'transações prontas para importar'
+          }`;
+          const details = [];
+          if (pendingImportState.newCategories.length > 0) {
+            details.push(`${pendingImportState.newCategories.length} nova(s) categoria(s) serão criadas`);
+          }
+          if (ignoredCount > 0) {
+            details.push(`${ignoredCount} linha(s) inválida(s) ignorada(s)`);
+          }
+          document.getElementById('import-preview-details').textContent =
+            details.length > 0 ? details.join(' · ') : 'Todas as linhas e categorias validadas com sucesso.';
+
+          previewBox.classList.remove('hidden');
+          confirmBtn.disabled = false;
+        };
+
+        reader.onerror = function () {
+          errEl.textContent = 'Não foi possível ler o arquivo selecionado.';
+          errEl.classList.remove('hidden');
+        };
+
+        reader.readAsText(file, 'UTF-8');
+      };
+
+      window.confirmCSVImport = function () {
+        if (pendingImportState.rows.length === 0) return;
+
+        const createdCatsMap = new Map();
+        pendingImportState.newCategories.forEach((entry, idx) => {
+          const [name, type] = entry.split('::');
+          const key = name.toLowerCase();
+          if (createdCatsMap.has(key)) return;
+          const existing = state.categories.find((c) => c.name.toLowerCase() === key);
+          if (existing) {
+            createdCatsMap.set(key, existing.id);
+            return;
+          }
+          const newCat = {
+            id: generateId('cat'),
+            name: name.slice(0, 32),
+            type: type === 'income' ? 'income' : 'expense',
+            color: IMPORT_PALETTE[(state.categories.length + idx) % IMPORT_PALETTE.length],
+            isCustom: true,
+          };
+          state.categories.push(newCat);
+          createdCatsMap.set(key, newCat.id);
+        });
+
+        const baseTime = Date.now();
+        const newTxs = pendingImportState.rows.map((row, idx) => ({
+          id: generateId('tx') + '_' + idx,
+          type: row.type,
+          amount: row.amount,
+          description: row.description,
+          date: row.date,
+          categoryId: row.categoryId || createdCatsMap.get(row.categoryName.toLowerCase()) || 'cat_outros_desp',
+          createdAt: baseTime + idx,
+        }));
+
+        if (pendingImportState.mode === 'replace') {
+          state.transactions = newTxs;
+        } else {
+          state.transactions = state.transactions.concat(newTxs);
+        }
+
+        saveJSON(STORAGE_KEYS.categories, state.categories);
+        saveJSON(STORAGE_KEYS.transactions, state.transactions);
+
+        closeImportModal();
+        renderAll();
+        showToast(`${newTxs.length} ${newTxs.length === 1 ? 'transação importada' : 'transações importadas'}.`);
+      };
+
+      window.exportCSV = function () {
+        if (state.transactions.length === 0) {
+          showToast('Não há transações para exportar.');
+          return;
+        }
+        const header = ['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor'];
+        const lines = state.transactions.map((tx) => {
+          const cat = getCategoryById(tx.categoryId).name;
+          const tipo = tx.type === 'income' ? 'Receita' : 'Despesa';
+          const desc = `"${String(tx.description).replace(/"/g, '""')}"`;
+          return [tx.date, desc, `"${cat}"`, tipo, tx.amount.toFixed(2)].join(',');
+        });
+        const csv = [header.join(','), ...lines].join('\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `financaexec_${getTodayISO()}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showToast('Arquivo CSV exportado.');
+      };
+
+      window.promptResetAll = function () {
+        document.getElementById('reset-modal').classList.remove('hidden');
+      };
+      window.closeResetModal = function () {
+        document.getElementById('reset-modal').classList.add('hidden');
+      };
+      window.confirmResetAll = function () {
+        state.transactions = [];
+        state.goals = [];
+        chat.messages = [];
+        persistChat();
+        state.categories = [...DEFAULT_CATEGORIES];
+        saveJSON(STORAGE_KEYS.transactions, state.transactions);
+        saveJSON(STORAGE_KEYS.goals, state.goals);
+        saveJSON(STORAGE_KEYS.categories, state.categories);
+        closeResetModal();
+        renderAll();
+        showToast('Todos os dados foram zerados.');
+      };
+
+      // ===== Assistente IA =====
+      const CHAT_STORAGE = {
+        messages: 'financaexec_v1_chat_messages',
+        settings: 'financaexec_v1_chat_settings',
+      };
+      const CHAT_DEFAULT_SETTINGS = {
+        provider: 'gemini',
+        apiKey: '',
+        model: 'gemini-2.5-flash',
+        proxyUrl: '/api/chat',
+      };
+      const CHAT_MAX_STORED = 40;
+      const CHAT_MAX_HISTORY = 20;
+      const CHAT_SUGGESTIONS = [
+        'Quanto gastei este mês?',
+        'Qual categoria pesa mais no meu orçamento?',
+        'Estou dentro das minhas metas?',
+        'Onde posso economizar?',
+      ];
+
+      function loadChatSettings() {
+        try {
+          const raw = localStorage.getItem(CHAT_STORAGE.settings);
+          return Object.assign({}, CHAT_DEFAULT_SETTINGS, raw ? JSON.parse(raw) : {});
+        } catch (err) {
+          return Object.assign({}, CHAT_DEFAULT_SETTINGS);
+        }
+      }
+
+      const chat = {
+        messages: loadJSON(CHAT_STORAGE.messages, []),
+        settings: loadChatSettings(),
+        busy: false,
+        controller: null,
+      };
+
+      function persistChat() {
+        const clean = chat.messages.filter((m) => !m.error && m.content).slice(-CHAT_MAX_STORED);
+        saveJSON(CHAT_STORAGE.messages, clean);
+      }
+
+      function buildFinancialContext() {
+        const currentMonth = getCurrentMonthISO();
+        const global = getGlobalTotals();
+        const sumBy = (list, type) => list.filter((t) => t.type === type).reduce((s, t) => s + t.amount, 0);
+        const money = (v) => v.toFixed(2);
+
+        const monthTx = state.transactions.filter((t) => t.date.startsWith(currentMonth));
+        const byCat = new Map();
+        monthTx
+          .filter((t) => t.type === 'expense')
+          .forEach((t) => {
+            const name = getCategoryById(t.categoryId).name;
+            byCat.set(name, (byCat.get(name) || 0) + t.amount);
+          });
+        const catLines = Array.from(byCat.entries())
+          .sort((a, b) => b[1] - a[1])
+          .map(([name, val]) => `- ${name}: R$ ${money(val)}`);
+
+        const [y, m] = currentMonth.split('-').map(Number);
+        const monthLines = [];
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(y, m - 1 - i, 1);
+          const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const list = state.transactions.filter((t) => t.date.startsWith(ym));
+          monthLines.push(`- ${ym}: receitas R$ ${money(sumBy(list, 'income'))}, despesas R$ ${money(sumBy(list, 'expense'))}`);
+        }
+
+        const recent = state.transactions
+          .slice()
+          .sort((a, b) => (a.date === b.date ? b.createdAt - a.createdAt : b.date.localeCompare(a.date)))
+          .slice(0, 60)
+          .map((t) => `- ${t.date} | ${t.type === 'income' ? 'Receita' : 'Despesa'} | ${getCategoryById(t.categoryId).name} | ${t.description} | R$ ${money(t.amount)}`);
+
+        const goalLines = state.goals.map((g) => {
+          const info = computeGoalStatus(g, currentMonth);
+          return `- ${info.title}: ${info.footerLeft} (${info.pctRaw.toFixed(0)}%) — ${info.statusLabel}`;
+        });
+
+        return [
+          `Saldo total acumulado: R$ ${money(global.balance)} (receitas totais R$ ${money(global.totalIncome)}, despesas totais R$ ${money(global.totalExpense)})`,
+          `Mês atual (${currentMonth}): receitas R$ ${money(sumBy(monthTx, 'income'))}, despesas R$ ${money(sumBy(monthTx, 'expense'))}`,
+          '',
+          'Despesas do mês atual por categoria:',
+          catLines.length ? catLines.join('\n') : '- Nenhuma despesa registrada',
+          '',
+          'Últimos 6 meses:',
+          monthLines.join('\n'),
+          '',
+          'Metas financeiras:',
+          goalLines.length ? goalLines.join('\n') : '- Nenhuma meta definida',
+          '',
+          `Lançamentos mais recentes (até 60, de ${state.transactions.length} no total):`,
+          recent.length ? recent.join('\n') : '- Nenhum lançamento',
+        ].join('\n');
+      }
+
+      function buildSystemPrompt() {
+        return [
+          'Você é o assistente financeiro do app FinançaExec, de controle financeiro pessoal.',
+          'Responda sempre em português do Brasil, de forma direta e curta, com valores em reais (R$).',
+          'Use apenas os dados abaixo para falar dos gastos e metas do usuário. Se algo não estiver nos dados, diga que não encontrou, sem inventar números.',
+          'Você pode dar dicas gerais de organização financeira, mas não recomende investimentos específicos; para decisões importantes, sugira consultar um profissional.',
+          'Pode usar **negrito** e listas com "- ".',
+          '',
+          `DATA DE HOJE: ${getTodayISO()}`,
+          '',
+          'DADOS FINANCEIROS DO USUÁRIO:',
+          buildFinancialContext(),
+        ].join('\n');
+      }
+
+      function formatChatText(text) {
+        const lines = escapeHtml(text).split('\n');
+        let html = '';
+        let inList = false;
+        for (const raw of lines) {
+          const line = raw
+            .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-slate-50">$1</strong>')
+            .replace(/`(.+?)`/g, '<code class="font-mono text-xs bg-surface px-1 py-0.5 rounded">$1</code>');
+          const li = line.match(/^\s*[-*•]\s+(.*)/);
+          if (li) {
+            if (!inList) {
+              html += '<ul class="list-disc pl-5 space-y-1 my-1">';
+              inList = true;
+            }
+            html += `<li>${li[1]}</li>`;
+          } else {
+            if (inList) {
+              html += '</ul>';
+              inList = false;
+            }
+            if (line.trim()) html += `<p>${line}</p>`;
+          }
+        }
+        if (inList) html += '</ul>';
+        return html;
+      }
+
+      function renderChat(forceScroll) {
+        const box = document.getElementById('chat-messages');
+        if (!box) return;
+        const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+
+        if (chat.messages.length === 0) {
+          box.innerHTML = `
+            <div class="h-full flex flex-col items-center justify-center text-center px-4 py-8">
+              <p class="text-sm font-medium text-slate-200">Como posso ajudar com suas finanças?</p>
+              <p class="text-xs text-slate-400 mt-1 max-w-sm">Faça perguntas sobre seus gastos, metas e saldo. Eu consulto os seus lançamentos para responder.</p>
+              <div class="mt-5 flex flex-wrap justify-center gap-2 max-w-xl">
+                ${CHAT_SUGGESTIONS.map(
+                  (s) => `<button type="button" onclick="sendChatMessage('${escapeHtml(s)}')" class="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-canvas border border-hairline hover:border-slate-600 rounded-lg transition-colors">${escapeHtml(s)}</button>`
+                ).join('')}
+              </div>
+            </div>`;
+        } else {
+          box.innerHTML = chat.messages
+            .map((msg, idx) => {
+              const isUser = msg.role === 'user';
+              const isLast = idx === chat.messages.length - 1;
+              let body;
+              if (!isUser && !msg.content && chat.busy && isLast) {
+                body = '<p class="text-slate-400">Pensando…</p>';
+              } else {
+                body = formatChatText(msg.content);
+              }
+              return `
+              <div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
+                <div class="max-w-[85%] sm:max-w-[75%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed space-y-1.5 break-words ${
+                  isUser
+                    ? 'bg-emerald-600 text-white'
+                    : msg.error
+                    ? 'bg-canvas border border-rose-900/60 text-rose-300'
+                    : 'bg-canvas border border-hairline text-slate-200'
+                }">${body}</div>
+              </div>`;
+            })
+            .join('');
+        }
+
+        if (forceScroll || nearBottom) box.scrollTop = box.scrollHeight;
+
+        const sendBtn = document.getElementById('chat-send-btn');
+        const stopBtn = document.getElementById('chat-stop-btn');
+        if (sendBtn) {
+          sendBtn.disabled = chat.busy;
+          sendBtn.classList.toggle('hidden', chat.busy);
+        }
+        if (stopBtn) stopBtn.classList.toggle('hidden', !chat.busy);
+      }
+
+      function updateChatStatus() {
+        const el = document.getElementById('chat-status');
+        if (!el) return;
+        const s = chat.settings;
+        if (s.provider === 'proxy') {
+          el.textContent = `Conectado ao seu servidor · ${s.proxyUrl}`;
+        } else if (s.apiKey.trim()) {
+          el.textContent = `Gemini · modelo ${s.model}`;
+        } else {
+          el.textContent = 'Configure a chave de API para começar';
+        }
+      }
+
+      window.renderAssistantView = function () {
+        updateChatStatus();
+        renderChat();
+      };
+
+      // Configurações
+      function syncChatSettingsFields() {
+        const s = chat.settings;
+        document.getElementById('chat-provider-select').value = s.provider;
+        document.getElementById('chat-apikey-input').value = s.apiKey;
+        document.getElementById('chat-model-input').value = s.model;
+        document.getElementById('chat-proxy-input').value = s.proxyUrl;
+        onChatProviderChange();
+      }
+
+      window.onChatProviderChange = function () {
+        const provider = document.getElementById('chat-provider-select').value;
+        document.getElementById('chat-gemini-fields').classList.toggle('hidden', provider !== 'gemini');
+        document.getElementById('chat-proxy-fields').classList.toggle('hidden', provider !== 'proxy');
+      };
+
+      window.toggleChatSettings = function () {
+        const panel = document.getElementById('chat-settings-panel');
+        const willOpen = panel.classList.contains('hidden');
+        if (willOpen) syncChatSettingsFields();
+        panel.classList.toggle('hidden', !willOpen);
+      };
+
+      window.saveChatSettingsFromForm = function () {
+        chat.settings = {
+          provider: document.getElementById('chat-provider-select').value,
+          apiKey: document.getElementById('chat-apikey-input').value.trim(),
+          model: document.getElementById('chat-model-input').value.trim() || CHAT_DEFAULT_SETTINGS.model,
+          proxyUrl: document.getElementById('chat-proxy-input').value.trim() || CHAT_DEFAULT_SETTINGS.proxyUrl,
+        };
+        try {
+          localStorage.setItem(CHAT_STORAGE.settings, JSON.stringify(chat.settings));
+        } catch (err) {
+          showToast('Não foi possível salvar a configuração.');
+          return;
+        }
+        document.getElementById('chat-settings-panel').classList.add('hidden');
+        updateChatStatus();
+        showToast('Configuração do chat salva.');
+      };
+
+      // ===== Agente Determinístico (Tool-Calling Chain) =====
+      const roundMoney = (val) => Math.round((Number(val) + Number.EPSILON) * 100) / 100;
+
+      const AGENT_TOOLS_DECLARATIONS = [
+        {
+          name: 'calcular_saldo_total',
+          description:
+            'Calcula com precisão matemática o saldo acumulado total (receitas totais menos despesas totais) de todo o histórico.',
+          parameters: {
+            type: 'OBJECT',
+            properties: {},
+          },
+        },
+        {
+          name: 'somar_por_categoria',
+          description:
+            'Agrupa, soma e calcula porcentagens exatas por categoria em um mês específico (YYYY-MM) ou em todo o histórico ("all").',
+          parameters: {
+            type: 'OBJECT',
+            properties: {
+              mes_yyyy_mm: {
+                type: 'STRING',
+                description: 'Mês no formato YYYY-MM (ex: "2026-11") ou "all" para todo o histórico.',
+              },
+              tipo: {
+                type: 'STRING',
+                description: 'Filtro: "expense" (despesas), "income" (receitas) ou "all" (ambos).',
+              },
+            },
+            required: ['mes_yyyy_mm', 'tipo'],
+          },
+        },
+        {
+          name: 'verificar_metas_financeiras',
+          description:
+            'Calcula o progresso exato, percentual consumido/atingido e saldo restante/excedido de todas as metas financeiras e tetos mensais.',
+          parameters: {
+            type: 'OBJECT',
+            properties: {
+              mes_yyyy_mm: {
+                type: 'STRING',
+                description: 'Mês de referência no formato YYYY-MM para os tetos por categoria.',
+              },
+            },
+          },
+        },
+        {
+          name: 'buscar_transacoes',
+          description:
+            'Filtra lançamentos por palavra-chave (na descrição ou categoria), intervalo de datas (YYYY-MM-DD) e tipo, retornando a soma exata e os itens.',
+          parameters: {
+            type: 'OBJECT',
+            properties: {
+              termo: {
+                type: 'STRING',
+                description: 'Termo de busca na descrição ou nome da categoria (opcional).',
+              },
+              data_inicio: {
+                type: 'STRING',
+                description: 'Data inicial YYYY-MM-DD (opcional).',
+              },
+              data_fim: {
+                type: 'STRING',
+                description: 'Data final YYYY-MM-DD (opcional).',
+              },
+              tipo: {
+                type: 'STRING',
+                description: '"expense", "income" ou "all" (opcional).',
+              },
+            },
+          },
+        },
+        {
+          name: 'comparar_ultimos_meses',
+          description:
+            'Gera o comparativo determinístico mês a mês de receitas, despesas e balanço líquido nos últimos N meses.',
+          parameters: {
+            type: 'OBJECT',
+            properties: {
+              quantidade_meses: {
+                type: 'NUMBER',
+                description: 'Quantidade de meses para comparar (padrão: 6).',
+              },
+            },
+          },
+        },
+      ];
+
+      function executeDeterministicTool(name, args = {}) {
+        const todayISO = getTodayISO();
+        const currentMonth = getCurrentMonthISO();
+
+        if (name === 'calcular_saldo_total') {
+          let receitas = 0;
+          let despesas = 0;
+          for (const tx of state.transactions) {
+            if (tx.type === 'income') receitas += Number(tx.amount) || 0;
+            else if (tx.type === 'expense') despesas += Number(tx.amount) || 0;
+          }
+          receitas = roundMoney(receitas);
+          despesas = roundMoney(despesas);
+          const saldo = roundMoney(receitas - despesas);
+          return {
+            saldo_total: saldo,
+            saldo_formatado: formatCurrency(saldo),
+            receitas_totais: receitas,
+            receitas_formatado: formatCurrency(receitas),
+            despesas_totais: despesas,
+            despesas_formatado: formatCurrency(despesas),
+            total_lancamentos: state.transactions.length,
+          };
+        }
+
+        if (name === 'somar_por_categoria') {
+          const targetMonth = args.mes_yyyy_mm || currentMonth;
+          const tipo = args.tipo || 'expense';
+          const filtered = state.transactions.filter((tx) => {
+            const matchDate = targetMonth === 'all' ? true : String(tx.date || '').startsWith(targetMonth);
+            const matchType = tipo === 'all' ? true : tx.type === tipo;
+            return matchDate && matchType;
+          });
+
+          const grouped = new Map();
+          let totalGeral = 0;
+          for (const tx of filtered) {
+            const val = Number(tx.amount) || 0;
+            const catName = getCategoryById(tx.categoryId).name;
+            grouped.set(catName, roundMoney((grouped.get(catName) || 0) + val));
+            totalGeral = roundMoney(totalGeral + val);
+          }
+
+          const ranking = Array.from(grouped.entries())
+            .map(([categoria, total]) => ({
+              categoria,
+              total,
+              total_formatado: formatCurrency(total),
+              percentual: totalGeral > 0 ? `${((total / totalGeral) * 100).toFixed(1)}%` : '0.0%',
+            }))
+            .sort((a, b) => b.total - a.total);
+
+          return {
+            periodo: targetMonth,
+            tipo_filtrado: tipo,
+            total_geral: totalGeral,
+            total_geral_formatado: formatCurrency(totalGeral),
+            quantidade_lancamentos: filtered.length,
+            detalhamento_por_categoria: ranking,
+          };
+        }
+
+        if (name === 'verificar_metas_financeiras') {
+          const refMonth = args.mes_yyyy_mm || currentMonth;
+          if (state.goals.length === 0) {
+            return { mensagem: 'Nenhuma meta financeira cadastrada.' };
+          }
+          const metas = state.goals.map((g) => {
+            const info = computeGoalStatus(g, refMonth);
+            return {
+              titulo: info.title,
+              referencia: info.subtitle,
+              situacao: info.statusLabel,
+              percentual: `${info.pctRaw.toFixed(1)}%`,
+              resumo_valores: info.footerLeft,
+              saldo_meta: info.footerRight,
+            };
+          });
+          return { mes_referencia: refMonth, metas };
+        }
+
+        if (name === 'buscar_transacoes') {
+          const { termo, data_inicio, data_fim, tipo } = args;
+          const filtradas = state.transactions.filter((tx) => {
+            if (tipo && tipo !== 'all' && tx.type !== tipo) return false;
+            if (data_inicio && tx.date < data_inicio) return false;
+            if (data_fim && tx.date > data_fim) return false;
+            if (termo && String(termo).trim() !== '') {
+              const q = String(termo).trim().toLowerCase();
+              const desc = String(tx.description || '').toLowerCase();
+              const cat = getCategoryById(tx.categoryId).name.toLowerCase();
+              if (!desc.includes(q) && !cat.includes(q)) return false;
+            }
+            return true;
+          });
+
+          const soma = roundMoney(filtradas.reduce((acc, tx) => acc + (Number(tx.amount) || 0), 0));
+          const itens = filtradas
+            .slice()
+            .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+            .slice(0, 30)
+            .map((tx) => ({
+              data: tx.date,
+              tipo: tx.type === 'income' ? 'Receita' : 'Despesa',
+              categoria: getCategoryById(tx.categoryId).name,
+              descricao: tx.description,
+              valor: formatCurrency(tx.amount),
+            }));
+
+          return {
+            total_encontrado: filtradas.length,
+            soma_exata: soma,
+            soma_formatada: formatCurrency(soma),
+            amostra_recente: itens,
+          };
+        }
+
+        if (name === 'comparar_ultimos_meses') {
+          const qtd = Math.min(Math.max(Number(args.quantidade_meses) || 6, 1), 24);
+          const [y, m] = todayISO.slice(0, 7).split('-').map(Number);
+          const meses = [];
+          for (let i = qtd - 1; i >= 0; i--) {
+            const d = new Date(y, m - 1 - i, 1);
+            const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const txsMes = state.transactions.filter((t) => String(t.date || '').startsWith(ym));
+            const receitas = roundMoney(
+              txsMes.filter((t) => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0)
+            );
+            const despesas = roundMoney(
+              txsMes.filter((t) => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0)
+            );
+            meses.push({
+              mes: ym,
+              receitas: formatCurrency(receitas),
+              despesas: formatCurrency(despesas),
+              balanco_mensal: formatCurrency(roundMoney(receitas - despesas)),
+            });
+          }
+          return { comparativo_mensal: meses };
+        }
+
+        return { erro: `Ferramenta desconhecida: ${name}` };
+      }
+
+      // Loop do Agente Determinístico (Tool Calling + Refinamento LLM)
+      async function runDeterministicGeminiAgent(history, onChunk, signal) {
+        const s = chat.settings;
+        const todayISO = getTodayISO();
+        const agentSystemPrompt = [
+          'Você é o assistente financeiro executivo do FinançaExec, acoplado a um motor determinístico de cálculo.',
+          `DATA DE HOJE: ${todayISO} (Mês atual: ${todayISO.slice(0, 7)}).`,
+          'REGRAS ESTRITAS:',
+          '1. NUNCA faça contas de cabeça ou estime valores. Sempre acione as ferramentas (tools) disponíveis para obter os números exatos.',
+          '2. Após receber o resultado JSON das ferramentas, refine a resposta em português do Brasil de forma clara, direta, executiva e amigável.',
+          '3. Destaque valores em R$ com **negrito** e use listas com "- " quando houver múltiplos itens.',
+          '4. Se não houver lançamentos no período consultado, informe claramente sem inventar números.',
+        ].join('\n');
+
+        const contents = history.map((m) => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }],
+        }));
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(s.model)}:generateContent`;
+
+        // Loop ReAct / Tool-Calling (até 5 passos para encadear cálculos se necessário)
+        for (let step = 0; step < 5; step++) {
+          const res = await fetch(url, {
+            method: 'POST',
+            signal,
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': s.apiKey,
+            },
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: agentSystemPrompt }] },
+              contents,
+              tools: [{ functionDeclarations: AGENT_TOOLS_DECLARATIONS }],
+              toolConfig: { functionCallingConfig: { mode: 'AUTO' } },
+              generationConfig: { temperature: 0.2 },
+            }),
+          });
+
+          if (!res.ok) {
+            let detail = '';
+            try {
+              const j = await res.json();
+              detail = (j.error && j.error.message) || '';
+            } catch (err) {}
+            throw new Error(detail || `Erro ${res.status} na API.`);
+          }
+
+          const data = await res.json();
+          const candidate = data.candidates && data.candidates[0];
+          const modelContent = candidate && candidate.content;
+          const parts = (modelContent && modelContent.parts) || [];
+
+          const functionCalls = parts.filter((p) => p.functionCall);
+
+          if (functionCalls.length > 0) {
+            // Adiciona a intenção de chamada do modelo ao histórico da cadeia
+            contents.push(modelContent);
+
+            // Executa cada ferramenta determinística localmente
+            const functionResponses = functionCalls.map((fc) => {
+              const { name, args } = fc.functionCall;
+              const result = executeDeterministicTool(name, args || {});
+              return {
+                functionResponse: {
+                  name,
+                  response: { result },
+                },
+              };
+            });
+
+            // Devolve os resultados exatos para o LLM refinar a resposta
+            contents.push({
+              role: 'user',
+              parts: functionResponses,
+            });
+            continue;
+          }
+
+          // Resposta final refinada pelo LLM
+          const finalText = parts.map((p) => p.text || '').join('').trim();
+          if (finalText) {
+            onChunk(finalText);
+          }
+          return;
+        }
+      }
+
+      async function callProxy(system, history, onChunk, signal) {
+        const res = await fetch(chat.settings.proxyUrl, {
+          method: 'POST',
+          signal,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system,
+            messages: history,
+            financial_data: {
+              transactions: state.transactions,
+              categories: state.categories,
+              goals: state.goals,
+              today: getTodayISO(),
+            },
+          }),
+        });
+        if (!res.ok) throw new Error(`Erro ${res.status} no servidor do chat.`);
+        const data = await res.json();
+        if (!data.reply) throw new Error('Resposta inválida do servidor do chat.');
+        onChunk(data.reply);
+      }
+
+      // Envio
+      window.sendChatMessage = async function (textOverride) {
+        if (chat.busy) return;
+        const input = document.getElementById('chat-input');
+        const text = (typeof textOverride === 'string' ? textOverride : input.value).trim();
+        if (!text) return;
+
+        if (chat.settings.provider === 'gemini' && !chat.settings.apiKey.trim()) {
+          const panel = document.getElementById('chat-settings-panel');
+          if (panel.classList.contains('hidden')) toggleChatSettings();
+          showToast('Informe a chave de API para usar o chat.');
+          return;
+        }
+
+        input.value = '';
+        autoResizeChatInput(input);
+
+        chat.messages.push({ role: 'user', content: text });
+        const reply = { role: 'assistant', content: '' };
+        chat.messages.push(reply);
+        chat.busy = true;
+        chat.controller = new AbortController();
+        renderChat(true);
+
+        let history = chat.messages
+          .slice(0, -1)
+          .filter((m) => !m.error && m.content)
+          .slice(-CHAT_MAX_HISTORY);
+        while (history.length && history[0].role !== 'user') history.shift();
+
+        const onChunk = (piece) => {
+          reply.content += piece;
+          renderChat();
+        };
+
+        try {
+          if (chat.settings.provider === 'proxy') {
+            const system = buildSystemPrompt();
+            await callProxy(system, history, onChunk, chat.controller.signal);
+          } else {
+            await runDeterministicGeminiAgent(history, onChunk, chat.controller.signal);
+          }
+          if (!reply.content) reply.content = 'Não recebi resposta. Tente novamente.';
+        } catch (err) {
+          if (err && err.name === 'AbortError') {
+            if (!reply.content) reply.content = 'Resposta interrompida.';
+          } else {
+            reply.error = true;
+            reply.content = `Não foi possível obter a resposta: ${(err && err.message) || 'erro desconhecido'}`;
+          }
+        } finally {
+          chat.busy = false;
+          chat.controller = null;
+          persistChat();
+          renderChat();
+          input.focus();
+        }
+      };
+
+      window.handleChatSubmit = function (e) {
+        e.preventDefault();
+        sendChatMessage();
+      };
+
+      window.handleChatKeydown = function (e) {
+        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+          e.preventDefault();
+          sendChatMessage();
+        }
+      };
+
+      window.autoResizeChatInput = function (el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+      };
+
+      window.stopChat = function () {
+        if (chat.controller) chat.controller.abort();
+      };
+
+      window.clearChat = function () {
+        if (chat.controller) chat.controller.abort();
+        chat.messages = [];
+        persistChat();
+        renderChat(true);
+      };
+
+      // Fechar modais com ESC
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeTransactionModal();
+          closeImportModal();
+          closeResetModal();
+        }
+      });
+
+      // Inicialização
+      document.getElementById('filter-month-input').value = getCurrentMonthISO();
+      document.getElementById('filter-start-date').value = state.filters.startDate;
+      document.getElementById('filter-end-date').value = state.filters.endDate;
+      document.getElementById('goals-month-ref').value = getCurrentMonthISO();
+      setGoalFormKind('category_cap');
+      setPeriodPreset('current_month');
+      setActiveView('overview');
+    })();
+  </script>
+</body>
+</html>
