@@ -1,0 +1,52 @@
+data,descricao,categoria,tipo,valor
+2026-09-05,Bolsa Estágio,Salário,Receita,1650.0
+2026-09-05,Auxílio Transporte,Salário,Receita,220.0
+2026-09-06,Aluguel Kitnet,Moradia,Despesa,720.0
+2026-09-07,Taxa de Água e Limpeza,Moradia,Despesa,48.0
+2026-09-08,Conta de Energia,Moradia,Despesa,76.4
+2026-09-09,Internet Banda Larga,Custos Fixos,Despesa,79.9
+2026-09-10,Plano Celular Controle,Custos Fixos,Despesa,34.9
+2026-09-10,Recarga Cartão Ônibus,Transporte,Despesa,190.0
+2026-09-11,Streaming Música Estudante,Assinaturas,Despesa,11.9
+2026-09-12,Compra do Mês Atacarejo,Alimentação,Despesa,285.5
+2026-09-15,Restaurante Universitário,Alimentação,Despesa,56.0
+2026-09-17,Sacolão Frutas e Verduras,Alimentação,Despesa,58.3
+2026-09-19,Farmácia e Higiene Pessoal,Saúde,Despesa,49.8
+2026-09-21,Impressões e Materiais Faculdade,Educação,Despesa,28.5
+2026-09-23,Cinema Meia-Entrada,Lazer,Despesa,26.0
+2026-09-26,Açaí e Lanche com Amigos,Lazer,Despesa,42.0
+2026-09-28,Corrida App Dia de Chuva,Transporte,Despesa,24.9
+2026-10-05,Bolsa Estágio,Salário,Receita,1650.0
+2026-10-05,Auxílio Transporte,Salário,Receita,220.0
+2026-10-06,Aluguel Kitnet,Moradia,Despesa,720.0
+2026-10-07,Taxa de Água e Limpeza,Moradia,Despesa,52.0
+2026-10-08,Conta de Energia,Moradia,Despesa,84.2
+2026-10-09,Internet Banda Larga,Custos Fixos,Despesa,79.9
+2026-10-10,Plano Celular Controle,Custos Fixos,Despesa,34.9
+2026-10-10,Recarga Cartão Ônibus,Transporte,Despesa,195.0
+2026-10-11,Streaming Música Estudante,Assinaturas,Despesa,11.9
+2026-10-12,Compra do Mês Atacarejo,Alimentação,Despesa,312.4
+2026-10-14,Freela Edição de Slides,Renda Extra,Receita,180.0
+2026-10-16,Restaurante Universitário,Alimentação,Despesa,62.0
+2026-10-18,Sacolão Frutas e Verduras,Alimentação,Despesa,64.5
+2026-10-20,Botijão de Gás Cozinha,Moradia,Despesa,115.0
+2026-10-22,Produtos de Limpeza,Moradia,Despesa,38.9
+2026-10-24,Saída Barzinho com Turma,Lazer,Despesa,68.0
+2026-10-27,Delivery Marmita Noite,Alimentação,Despesa,34.9
+2026-10-29,Blusa Básica Promoção,Vestuário,Despesa,59.9
+2026-11-05,Bolsa Estágio,Salário,Receita,1650.0
+2026-11-05,Auxílio Transporte,Salário,Receita,220.0
+2026-11-06,Aluguel Kitnet,Moradia,Despesa,720.0
+2026-11-07,Taxa de Água e Limpeza,Moradia,Despesa,50.0
+2026-11-08,Conta de Energia,Moradia,Despesa,89.6
+2026-11-09,Internet Banda Larga,Custos Fixos,Despesa,79.9
+2026-11-10,Plano Celular Controle,Custos Fixos,Despesa,34.9
+2026-11-10,Recarga Cartão Ônibus,Transporte,Despesa,200.0
+2026-11-11,Streaming Música Estudante,Assinaturas,Despesa,11.9
+2026-11-12,Compra do Mês Atacarejo,Alimentação,Despesa,298.7
+2026-11-13,Restaurante Universitário,Alimentação,Despesa,58.0
+2026-11-14,Sacolão e Padaria,Alimentação,Despesa,61.4
+2026-11-15,Farmácia Remédio Gripe,Saúde,Despesa,46.5
+2026-11-16,Xerox Apostila Provas,Educação,Despesa,24.0
+2026-11-18,Corrida App Volta Faculdade,Transporte,Despesa,29.8
+2026-11-19,Lanche e Sorvete com Amigas,Lazer,Despesa,48.0

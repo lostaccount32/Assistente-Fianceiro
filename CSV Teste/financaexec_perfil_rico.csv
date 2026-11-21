@@ -1,0 +1,55 @@
+data,descricao,categoria,tipo,valor
+2026-09-05,Salário Mensal,Salário,Receita,4350.0
+2026-09-06,Aluguel Apartamento,Moradia,Despesa,1380.0
+2026-09-06,Taxa de Condomínio,Moradia,Despesa,310.0
+2026-09-08,Internet Fibra 500Mb,Custos Fixos,Despesa,119.9
+2026-09-09,Conta de Energia Elétrica,Moradia,Despesa,168.4
+2026-09-10,Conta de Água e Esgoto,Moradia,Despesa,92.3
+2026-09-10,Mensalidade Academia,Saúde,Despesa,109.9
+2026-09-11,Plano de Celular Pós,Custos Fixos,Despesa,64.9
+2026-09-12,Supermercado Compra do Mês,Alimentação,Despesa,542.8
+2026-09-14,Recarga Cartão Transporte,Transporte,Despesa,140.0
+2026-09-15,Assinatura Streaming Música,Assinaturas,Despesa,21.9
+2026-09-16,Freelance Landing Page,Renda Extra,Receita,780.0
+2026-09-18,Jantar com Amigos,Lazer,Despesa,136.5
+2026-09-20,Farmácia Medicamentos,Saúde,Despesa,87.2
+2026-09-22,Delivery Pizza Fim de Semana,Alimentação,Despesa,78.9
+2026-09-25,Ingressos Cinema + Pipoca,Lazer,Despesa,94.0
+2026-09-27,Corridas por Aplicativo,Transporte,Despesa,68.5
+2026-09-28,Livro de Arquitetura de Software,Educação,Despesa,115.0
+2026-10-05,Salário Mensal,Salário,Receita,4350.0
+2026-10-06,Aluguel Apartamento,Moradia,Despesa,1380.0
+2026-10-06,Taxa de Condomínio,Moradia,Despesa,310.0
+2026-10-08,Internet Fibra 500Mb,Custos Fixos,Despesa,119.9
+2026-10-09,Conta de Energia Elétrica,Moradia,Despesa,181.2
+2026-10-10,Conta de Água e Esgoto,Moradia,Despesa,97.6
+2026-10-10,Mensalidade Academia,Saúde,Despesa,109.9
+2026-10-11,Plano de Celular Pós,Custos Fixos,Despesa,64.9
+2026-10-12,Supermercado Compra do Mês,Alimentação,Despesa,589.4
+2026-10-14,Plataforma de Cursos Online,Educação,Despesa,49.9
+2026-10-15,Assinatura Streaming Música,Assinaturas,Despesa,21.9
+2026-10-17,Venda de Monitor Usado,Renda Extra,Receita,420.0
+2026-10-18,Hortifrúti e Padaria,Alimentação,Despesa,124.3
+2026-10-20,Corte de Cabelo,Cuidados Pessoais,Despesa,55.0
+2026-10-22,Show Banda Independente,Lazer,Despesa,165.0
+2026-10-24,Corridas por Aplicativo,Transporte,Despesa,93.4
+2026-10-26,Camisa Casual,Vestuário,Despesa,149.9
+2026-10-29,Delivery Hambúrguer,Alimentação,Despesa,63.5
+2026-11-05,Salário Mensal,Salário,Receita,4350.0
+2026-11-06,Aluguel Apartamento,Moradia,Despesa,1380.0
+2026-11-06,Taxa de Condomínio,Moradia,Despesa,310.0
+2026-11-08,Internet Fibra 500Mb,Custos Fixos,Despesa,119.9
+2026-11-09,Conta de Energia Elétrica,Moradia,Despesa,174.6
+2026-11-10,Conta de Água e Esgoto,Moradia,Despesa,95.4
+2026-11-10,Mensalidade Academia,Saúde,Despesa,109.9
+2026-11-11,Plano de Celular Pós,Custos Fixos,Despesa,64.9
+2026-11-11,Armazenamento em Nuvem,Assinaturas,Despesa,14.9
+2026-11-12,Supermercado Compra do Mês,Alimentação,Despesa,518.7
+2026-11-13,Recarga Cartão Transporte,Transporte,Despesa,150.0
+2026-11-14,Plataforma de Cursos Online,Educação,Despesa,49.9
+2026-11-15,Assinatura Streaming Música,Assinaturas,Despesa,21.9
+2026-11-16,Consultoria Automação Planilha,Renda Extra,Receita,640.0
+2026-11-17,Café e Lanche da Tarde,Alimentação,Despesa,42.5
+2026-11-18,Jogo Digital Promoção,Lazer,Despesa,119.0
+2026-11-19,Presente de Aniversário,Outros,Despesa,135.0
+2026-11-20,Barzinho Sexta-feira,Lazer,Despesa,148.0
