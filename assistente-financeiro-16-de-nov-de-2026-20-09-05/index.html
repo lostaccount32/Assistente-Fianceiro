@@ -546,6 +546,14 @@
               <p id="chat-status" class="text-xs text-slate-400 mt-0.5">Pergunte sobre seus gastos, metas e saldo</p>
             </div>
             <div class="flex items-center gap-2 shrink-0">
+              <div class="flex items-center bg-canvas border border-hairline rounded-lg p-0.5 text-xs">
+                <button type="button" id="btn-provider-ollama" onclick="setProvider('ollama')" class="px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-white transition-colors">
+                  Local (Ollama)
+                </button>
+                <button type="button" id="btn-provider-groq" onclick="setProvider('groq')" class="px-2.5 py-1 rounded-md font-medium bg-emerald-600 text-white transition-colors">
+                  Nuvem (Groq)
+                </button>
+              </div>
               <button type="button" onclick="clearChat()" class="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-canvas border border-hairline hover:border-slate-600 rounded-lg whitespace-nowrap transition-colors">
                 Nova conversa
               </button>
@@ -2537,5 +2545,50 @@
       setActiveView('overview');
     })();
   </script>
+  <script>
+  function updateProviderUI(provider) {
+    const btnOllama = document.getElementById('btn-provider-ollama');
+    const btnGroq = document.getElementById('btn-provider-groq');
+    if (!btnOllama || !btnGroq) return;
+
+    const ativo = ['bg-emerald-600', 'text-white'];
+    const inativo = ['text-slate-400', 'hover:text-white'];
+
+    if (provider === 'ollama') {
+      btnOllama.classList.add(...ativo);
+      btnOllama.classList.remove(...inativo);
+      btnGroq.classList.remove(...ativo);
+      btnGroq.classList.add(...inativo);
+    } else {
+      btnGroq.classList.add(...ativo);
+      btnGroq.classList.remove(...inativo);
+      btnOllama.classList.remove(...ativo);
+      btnOllama.classList.add(...inativo);
+    }
+  }
+
+  async function setProvider(provider) {
+    try {
+      const res = await fetch('/api/provider', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider }),
+      });
+      if (res.ok) {
+        updateProviderUI(provider);
+      }
+    } catch (err) {
+      console.error('Erro ao trocar provedor:', err);
+    }
+  }
+
+  // Sincroniza o botão com o provedor ativo no servidor ao abrir a página
+  fetch('/api/provider')
+    .then((res) => res.json())
+    .then((data) => {
+      if (data && data.provider) updateProviderUI(data.provider);
+    })
+    .catch(() => {});
+</script>
 </body>
 </html>

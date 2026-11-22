@@ -5,3 +5,8 @@ venv
 # Bytecode compilado do Python
 __pycache__/
 *.py[cod]
+
+.env
+logs/
+node_modules/
+.venv/
